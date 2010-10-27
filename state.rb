@@ -6,6 +6,7 @@ require 'statemachine'
 #	def action1
 #		puts "This is action1"
 #	end
+#
 #end
 
 

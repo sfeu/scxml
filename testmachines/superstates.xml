@@ -1,0 +1,8 @@
+<scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
+  <state id="super_state" initial="child2">
+    <state id="child1" />
+    <state id="child2" >
+      <transition event="to_child1" target="child1"/>
+    </state>
+  </state>
+</scxml>

@@ -1,0 +1,104 @@
+<scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml"><!--   node-size-and-position x=0.0 y=0.0 w=500.0 h=940.0  -->
+ <state id="hand_gestures" initial="no_hands"><!--   node-size-and-position x=20.0 y=40.0 w=450.0 h=880.0  -->
+  <state id="two_hands" initial="wait_two"><!--   node-size-and-position x=30.0 y=40.0 w=340.0 h=410.0  -->
+   <transition event="one_hand" target="one_hand"><!--   edge-path [one_hand]  x=190.0 y=517.0 pointx=-1.0 pointy=23.0 offsetx=6.0 offsety=23.0  --></transition>
+   <transition event="no_hands" target="no_hands"><!--   edge-path [no_hands]  x=94.49800059980008 y=474.80003998800396 pointx=0.0 pointy=7.0 offsetx=5.0 offsety=4.0  --></transition>
+   <state id="n" initial="narrowing"><!--   node-size-and-position x=20.0 y=240.0 w=135.53364159488612 h=147.0  -->
+    <transition event="widen" target="w">
+     <invoke src="print_distance" type="x-mint"></invoke>
+<!--   edge-path [w]  x=62.766820797443074 y=214.0 pointx=0.0 pointy=29.0 offsetx=-2.0 offsety=-8.0  --></transition>
+    <state id="narrowed"><!--   node-size-and-position x=30.0 y=30.0 w=60.0 h=20.0  -->
+     <transition event="narrow" target="narrowing">
+      <invoke src="print_distance" type="x-mint"></invoke>
+<!--   edge-path [narrowing]  x=82.76682079744307 y=84.0 pointx=0.0 pointy=22.0 offsetx=2.0 offsety=3.0  --></transition>
+    </state>
+    <state id="narrowing"><!--   node-size-and-position x=20.0 y=110.0 w=60.0 h=20.0  -->
+     <onentry>
+      <invoke src="start_confirm_timeout" type="x-mint"></invoke>
+     </onentry>
+     <onexit>
+      <invoke src="stop_confirm_timeout" type="x-mint"></invoke>
+     </onexit>
+     <transition event="confirm" target="narrowed"><!--   edge-path [narrowed]  x=32.766820797443074 y=74.0 pointx=0.0 pointy=9.0 offsetx=-3.0 offsety=-6.0  --></transition>
+     <transition event="narrow">
+      <invoke src="reset_confirm_ticker" type="x-mint"></invoke>
+<!--   edge-path [narrowing]  pointx=0.0 pointy=-10.0 offsetx=27.0 offsety=-3.0  --></transition>
+    </state>
+   </state>
+   <state id="w" initial="widening"><!--   node-size-and-position x=20.953427405958184 y=42.99999999999999 w=133.62678678296976 h=147.0  -->
+    <transition event="narrow" target="n">
+     <invoke src="print_distance" type="x-mint"></invoke>
+<!--   edge-path [n]  x=111.0 y=215.0 pointx=0.0 pointy=31.0 offsetx=2.0 offsety=6.0  --></transition>
+    <state id="widened"><!--   node-size-and-position x=29.999999999999986 y=40.0 w=50.0 h=20.0  -->
+     <transition event="widen" target="widening">
+      <invoke src="print_distance" type="x-mint"></invoke>
+<!--   edge-path [widening]  x=81.8133933914849 y=81.0 pointx=0.0 pointy=15.0 offsetx=9.0 offsety=-10.0  --></transition>
+    </state>
+    <state id="widening"><!--   node-size-and-position x=21.962724282969738 y=111.0 w=50.0 h=20.0  -->
+     <onentry>
+      <invoke src="start_confirm_timeout" type="x-mint"></invoke>
+     </onentry>
+     <onexit>
+      <invoke src="stop_confirm_timeout" type="x-mint"></invoke>
+     </onexit>
+     <transition event="confirm" target="widened"><!--   edge-path [widened]  x=43.50171423674868 y=80.18515344006022 pointx=0.0 pointy=21.0 offsetx=-1.0 offsety=-12.0  --></transition>
+     <transition event="widen" target="widening">
+      <invoke src="reset_confirm_ticker" type="x-mint"></invoke>
+<!--   edge-path [widening]  pointx=0.0 pointy=20.0 offsetx=0.0 offsety=0.0  --></transition>
+    </state>
+   </state>
+   <state id="wait_two"><!--   node-size-and-position x=210.0 y=160.0 w=100.0 h=40.0  -->
+    <transition event="widen" target="w"><!--   edge-path [w]  pointx=-1.0 pointy=-20.0 offsetx=-7.0 offsety=-3.0  --></transition>
+    <transition event="narrow" target="n"></transition>
+   </state>
+  </state>
+  <state id="one_hand" initial="wait_one"><!--   node-size-and-position x=20.0 y=570.0 w=190.0 h=286.828125  -->
+   <transition event="two_hands" target="two_hands"><!--   edge-path [two_hands]  x=129.50312353591877 y=509.75007808839797 pointx=0.0 pointy=-30.0 offsetx=1.0 offsety=-5.0  --></transition>
+   <transition event="no_hands" target="no_hands"><!--   edge-path [no_hands]  x=50.0 y=547.0 pointx=0.0 pointy=19.0 offsetx=-3.0 offsety=-9.0  --></transition>
+   <state id="previous"><!--   node-size-and-position x=65.0 y=43.00000000000003 w=50.0 h=20.0  -->
+    <onentry>
+     <invoke src="command_timeout_start_prev" type="x-mint"></invoke>
+    </onentry>
+    <onexit>
+     <invoke src="command_timeout_stop" type="x-mint"></invoke>
+    </onexit>
+    <transition event="stop" target="wait_one"><!--   edge-path [wait_one]  x=80.57492925712545 y=93.14495755427527 pointx=0.0 pointy=-12.0 offsetx=-3.0 offsety=3.0  --></transition>
+    <transition event="previous" target="previous_tick">
+     <invoke src="issued_rev" type="x-mint"></invoke>
+<!--   edge-path [previous_tick]  x=130.0 y=77.0 pointx=0.0 pointy=22.0 offsetx=5.0 offsety=6.0  --></transition>
+   </state>
+   <state id="wait_one"><!--   node-size-and-position x=20.0 y=113.00000000000003 w=50.0 h=20.0  -->
+    <transition event="next" target="next"><!--   edge-path [next]  x=60.0 y=157.0 pointx=0.0 pointy=18.0 offsetx=4.0 offsety=9.0  --></transition>
+    <transition event="previous" target="previous"><!--   edge-path [previous]  x=40.0 y=77.0 pointx=0.0 pointy=9.0 offsetx=-1.0 offsety=-13.0  --></transition>
+   </state>
+   <state id="next_tick"><!--   node-size-and-position x=20.999999999999996 y=246.82812499999991 w=50.0 h=20.0  -->
+    <onentry>
+     <invoke src="tick" type="x-mint"></invoke>
+    </onentry>
+    <transition event="tick" target="next"><!--   edge-path [next]  x=33.50171423674869 y=219.81484655993978 pointx=0.0 pointy=15.0 offsetx=0.0 offsety=0.0  --></transition>
+   </state>
+   <state id="previous_tick"><!--   node-size-and-position x=110.0 y=106.99999999999999 w=70.0 h=20.0  -->
+    <onentry>
+     <invoke src="tick" type="x-mint"></invoke>
+    </onentry>
+    <transition event="tick" target="previous"><!--   edge-path [previous]  x=110.0 y=87.0 pointx=0.0 pointy=8.0 offsetx=4.0 offsety=3.0  --></transition>
+   </state>
+   <state id="next"><!--   node-size-and-position x=20.0 y=176.99999999999997 w=50.0 h=20.0  -->
+    <onentry>
+     <invoke src="command_timeout_start_next" type="x-mint"></invoke>
+    </onentry>
+    <onexit>
+     <invoke src="command_timeout_stop" type="x-mint"></invoke>
+    </onexit>
+    <transition event="stop" target="wait_one"><!--   edge-path [wait_one]  x=33.00799041278211 y=158.39968038348871 pointx=0.0 pointy=11.0 offsetx=-4.0 offsety=5.0  --></transition>
+    <transition event="next" target="next_tick">
+     <invoke src="issued_next" type="x-mint"></invoke>
+<!--   edge-path [next_tick]  x=53.49828576325132 y=220.1851534400602 pointx=0.0 pointy=17.0 offsetx=0.0 offsety=-8.0  --></transition>
+   </state>
+  </state>
+  <state id="no_hands"><!--   node-size-and-position x=20.0 y=497.0 w=60.0 h=30.0  -->
+   <transition event="one_hand" target="one_hand"><!--   edge-path [one_hand]  x=96.0 y=545.0  --></transition>
+   <transition event="two_hands" target="two_hands"><!--   edge-path [two_hands]  x=70.0 y=477.0 pointx=0.0 pointy=35.0 offsetx=-5.0 offsety=11.0  --></transition>
+  </state>
+ </state>
+</scxml>

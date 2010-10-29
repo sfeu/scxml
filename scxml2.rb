@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 require 'rubygems'
 require 'statemachine'
 require 'rexml/document'
@@ -17,6 +18,18 @@ class SuperstateBuilder < Builder
       @subject = Superstate.new(id, superstate, statemachine)
       p "subject: #{@subject}"
       superstate.startstate_id = id if superstate.startstate_id == nil
+
+      # small patch to support redefinition of already existing states without 
+      # loosing the already existing transformations. Used to overwrite states
+      # with superstates.
+
+      s = statemachine.get_state(id)
+      if (s)
+        s.transitions.each {|k,v|
+          @subject.add(v)
+        }
+      end
+
       statemachine.add_state(@subject)
     end
 end

@@ -1,10 +1,38 @@
-# -*- coding: utf-8 -*-
 require 'rubygems'
 require 'statemachine'
 require 'rexml/document'
 require 'rexml/streamlistener'
 
 include REXML
+
+module Statemachine
+class SuperstateBuilder < Builder
+    include StateBuilding
+    include SuperstateBuilding
+
+    def initialize(id, superstate, statemachine)
+      super statemachine
+      p "id: #{id}"
+      p "superstate: #{superstate}"
+      @subject = Superstate.new(id, superstate, statemachine)
+      p "subject: #{@subject}"
+      superstate.startstate_id = id if superstate.startstate_id == nil
+      statemachine.add_state(@subject)
+    end
+end
+
+    class StateBuilder < Builder
+    include StateBuilding
+
+    def initialize(id, superstate, statemachine)
+      super statemachine
+      p "id: #{id}"
+      p "superstate: #{superstate}"
+      @subject = acquire_state_in(id, superstate)
+      p "subject: #{@subject}"
+    end
+  end
+end
 
 class State
   attr_accessor :id, :initial
@@ -39,19 +67,23 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
   def tag_start(name, attributes)
     case name
       when 'state'
+        state = nil
         @current_state = State.new
-      @current_state.id = attributes['id']
-      @current_state.initial = attributes['initial']        # duvida se realmente precisa - precisamos lembrar o initial estado. pq ele vai ser definido mais tarde!  
-        if (@state.empty?)   # este estado nao subestado de ninguem
-          if (@current_state.initial != nil)     # se for definido um estado inicial
-            @state.push(Statemachine::StateBuilder.new(attributes['id'].to_sym, @subject, @statemachine))  #
-            #@state.last.startstate(@current_state.initial.to_sym)
-          else
-            @state.push(Statemachine::StateBuilder.new(attributes['id'].to_sym, @subject, @statemachine))
-          end
+        @current_state.id = attributes['id']
+        @current_state.initial = attributes['initial']        # dúvida se realmente precisa
+
+        # It will only recognize a superstate if it has the attribute 'initial' in its tag
+        if (@current_state.initial != nil)
+            state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
+            state.startstate(@current_state.initial.to_sym)
         else
-           @state.push(Statemachine::StateBuilder.new(attributes['id'].to_sym, @state.last, @statemachine)) # here we need to add your idea with the current_state variable
+          if (@state.empty?)
+            state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
+          else
+            state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @state.last.subject, @statemachine)
+          end
         end
+        @state.push(state)
       when 'transition'
         @current_transition = Transition.new
         @current_transition.event = attributes['event']

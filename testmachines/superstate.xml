@@ -1,13 +1,8 @@
 <?xml version="1.0"?>
 <scxml xmlns="http://www.w3.org/2005/07/scxml" version="1.0" profile="ecmascript" initial="off">
   <state id="state" initial="state2">
-    <state id="state1" initial="state4">
-      <state id="state4">
-        <transition event="event4" target="state2">
-          <log expr="'This is action4'"/>
-        </transition>
-      </state>
-	  <transition event="event1" target="state4">
+    <state id="state1">
+      <transition event="event1" target="state2">
         <log expr="'This is action1'"/>
       </transition>
 	</state>

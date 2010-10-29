@@ -84,15 +84,19 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
         @current_state = State.new
         @current_state.id = attributes['id']
         @current_state.initial = attributes['initial']        # dúvida se realmente precisa
-
-        # It will only recognize a superstate if it has the attribute 'initial' in its tag
-        if (@current_state.initial != nil)
+        if (@current_state.initial != nil)                    # we already know it is a superstate
             state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
             state.startstate(@current_state.initial.to_sym)
         else
-          if (@state.empty?)
+          if (@state.empty?)      # It isn't a sub state
             state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
-          else
+          else                    # this state is a sub state => last state in @state it's its superstate
+            if (@state.last.is_a? Statemachine::StateBuilder)       # if @state.last isn't a superstate, change it to one
+              state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @state.last.subject.superstate, @state.last.subject.statemachine)
+              @state.pop            # pops the old one
+              @state.push(state)    # pushes the new one
+            end
+            #   @state.last is a superstate => just create the new state using it
             state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @state.last.subject, @statemachine)
           end
         end
@@ -113,9 +117,13 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
     case name
       when 'state'
          @state.pop
-      when 'transition'
+      when 'transition'       # I still have to add the parent state's transitions to the child state
         action = @actions.last
-        @state.last.event(@transitions.last.event.to_sym, @transitions.last.target.to_sym, proc { puts action })
+        if (@transitions.last.target != nil)     # if it has a target state
+          @state.last.event(@transitions.last.event.to_sym, @transitions.last.target.to_sym, proc { puts action })
+        else                                     # it is its own target state
+          @state.last.event(@transitions.last.event.to_sym, @state.last.id.to_sym, proc { puts action })
+        end
         @transitions.pop
         @actions.pop
     end

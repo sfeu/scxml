@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<scxml xmlns="http://www.w3.org/2005/07/scxml" version="1.0" profile="ecmascript" initial="off">
+  <state id="state">
+    <state id="state1">
+      <transition event="event1" target="state2">
+        <log expr="'This is action1'"/>
+      </transition>
+	</state>
+    <state id="state2">
+		<transition event="event2" target="state3">
+          <log expr="'This is action2'"/>
+        </transition>
+	</state>
+    <state id="state3">
+		<transition event="event3" target="state1">
+          <log expr="'This is action3'"/>
+        </transition>
+	</state>
+   </state>
+</scxml>

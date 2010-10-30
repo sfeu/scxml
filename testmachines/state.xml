@@ -1,7 +1,0 @@
-<scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
-  <state id="state1">
-     <transition event="event1" target="state2">
-      <log expr="This is action1"/>
-     </transition>
-  </state>
-</scxml>

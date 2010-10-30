@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: raw-text -*-
 require 'rubygems'
 require 'statemachine'
 require 'rexml/document'
@@ -7,16 +7,16 @@ require 'rexml/streamlistener'
 include REXML
 
 module Statemachine
-class SuperstateBuilder < Builder
+  class SuperstateBuilder < Builder
     include StateBuilding
     include SuperstateBuilding
 
     def initialize(id, superstate, statemachine)
       super statemachine
-      p "id: #{id}"
-      p "superstate: #{superstate}"
+      #p "id: #{id}"
+      # p "superstate: #{superstate}"
       @subject = Superstate.new(id, superstate, statemachine)
-      p "subject: #{@subject}"
+      #   p "subject: #{@subject}"
       superstate.startstate_id = id if superstate.startstate_id == nil
 
       # small patch to support redefinition of already existing states without 
@@ -32,17 +32,17 @@ class SuperstateBuilder < Builder
 
       statemachine.add_state(@subject)
     end
-end
+  end
 
-    class StateBuilder < Builder
+  class StateBuilder < Builder
     include StateBuilding
 
     def initialize(id, superstate, statemachine)
       super statemachine
-      p "id: #{id}"
-      p "superstate: #{superstate}"
+#      p "id: #{id}"
+#      p "superstate: #{superstate}"
       @subject = acquire_state_in(id, superstate)
-      p "subject: #{@subject}"
+ #     p "subject: #{@subject}"
     end
   end
 end
@@ -58,8 +58,8 @@ end
 class StatemachineParser < Statemachine:: StatemachineBuilder
   include StreamListener
  
-  def initialize
-	super
+  def initialize(logger = nil)
+    super()
     # derived by super class Statemachinebuilder - you need to understand how both variables @statemachine and @subject are used in the builders
     #@statemachine = nil
     @current_transition = nil
@@ -68,6 +68,7 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
     @transitions = Array.new
     @actions = Array.new
     @state = Array.new
+    @@logger = logger
   end
 
   def build_from_scxml(filename)
@@ -75,6 +76,13 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
     Document.parse_stream(source, self)
     @statemachine.reset
 	return @statemachine
+  end
+
+  # parses scxml directly from string parameter stringbuffer
+  def build_from_scxml_string(stringbuffer)
+    Document.parse_stream(stringbuffer, self)
+    @statemachine.reset
+    return @statemachine
   end
 
   def tag_start(name, attributes)
@@ -120,9 +128,9 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
       when 'transition'       # I still have to add the parent state's transitions to the child state
         action = @actions.last
         if (@transitions.last.target != nil)     # if it has a target state
-          @state.last.event(@transitions.last.event.to_sym, @transitions.last.target.to_sym, proc { puts action })
+          @state.last.event(@transitions.last.event.to_sym, @transitions.last.target.to_sym, proc { @@logger.puts action if (action and @@logger)  })
         else                                     # it is its own target state
-          @state.last.event(@transitions.last.event.to_sym, @state.last.id.to_sym, proc { puts action })
+          @state.last.event(@transitions.last.event.to_sym, @state.last.id.to_sym, proc {  @@logger.puts action if ( action and @@logger)  })
         end
         @transitions.pop
         @actions.pop

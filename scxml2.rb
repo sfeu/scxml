@@ -29,7 +29,6 @@ module Statemachine
           @subject.add(v)
         }
       end
-
       statemachine.add_state(@subject)
     end
   end
@@ -68,6 +67,7 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
     @transitions = Array.new
     @actions = Array.new
     @state = Array.new
+    @substate = Array.new
     @@logger = logger
   end
 
@@ -124,7 +124,21 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
   def tag_end(name) # think we really need this, since only when reaching the end tag we are sure about that we have added all events, actions and so on.
     case name
       when 'state'
-         @state.pop
+        if (@state.last.is_a? Statemachine::SuperstateBuilder)
+          s = statemachine.get_state(@state.last.subject.id)
+          @substate.each{|j|
+            if (s)
+              s1 = statemachine.get_state(j.subject.id)
+              s.transitions.each {|v,k|
+              if (s1)
+                s1.add(k)
+              end 
+              }
+            end
+          }
+        end
+        @substate.push(@state.last)
+        @state.pop
       when 'transition'       # I still have to add the parent state's transitions to the child state
         action = @actions.last
         if (@transitions.last.target != nil)     # if it has a target state

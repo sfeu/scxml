@@ -190,5 +190,60 @@ EOS
         @sm.state.should==:state2
       end
     end
+    
+    describe 'with onentry or onexit' do
+      before (:each) do
+        @messenger = mock("messenger" )
+        
+        @messenge_queue = mock("message_queue" )
+        
+        parser = StatemachineParser.new @messenger # @message_queue
+
+        scxml = <<EOS
+<scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
+  <state id="state1">
+        <transition event="to_state2" target="state2"/>
+  </state>
+  <state id="state2">
+     <onentry>
+          <log expr="'inside state2 onentry'"/>
+          <send targettype="'x-mint'" target="target" event="'fax.SEND'"/>
+     </onentry>
+     <onexit>
+          <log expr="'inside state2 onexit'"/>
+     </onexit>
+      <transition event="to_state1" target="state1">
+           <send targettype="'x-mint'" target="target-2" event="'fax.SEND-2'"/>
+        </transition>
+  </state>
+
+</scxml>
+EOS
+
+        @sm = parser.build_from_scxml_string scxml
+      end
+
+      it "should consider onentry" do
+        @messenger.should_receive(:puts).with("'inside state2 onentry'" )
+        @sm.to_state2
+      end
+      
+      it "should consider onexit" do
+        @sm.to_state2
+        @messenger.should_receive(:puts).with("'inside state2 onexit'" )
+        @sm.to_state1
+      end
+
+      it "should receive send inside onentry" do
+        @message_queue.should_receive(:send).with("target","fax.SEND")
+        @sm.to_state2
+      end
+
+      it "should receive send inside a transition" do
+        @sm.to_state2
+        @message_queue.should_receive(:send).with("target-2","fax.SEND-2")
+        @sm.to_state1
+      end
+    end
   end
 end

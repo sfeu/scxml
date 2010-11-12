@@ -207,13 +207,13 @@ EOS
   <state id="state2">
      <onentry>
           <log expr="'inside state2 onentry'"/>
-          <send targettype="'x-mint'" target="target" event="'fax.SEND'"/>
+          <send type="'x-mint'" target="target" event="'fax.SEND'"/>
      </onentry>
      <onexit>
           <log expr="'inside state2 onexit'"/>
      </onexit>
       <transition event="to_state1" target="state1">
-           <send targettype="'x-mint'" target="target-2" event="'fax.SEND-2'"/>
+           <send type="'x-mint'" target="target-2" event="'fax.SEND-2'"/>
         </transition>
   </state>
 

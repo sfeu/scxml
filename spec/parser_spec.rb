@@ -1,4 +1,3 @@
-require 'statemachine'
 require 'scxml2.rb'
 
 describe 'The StatemachineParser for' do
@@ -195,9 +194,9 @@ EOS
       before (:each) do
         @messenger = mock("messenger" )
         
-        @messenge_queue = mock("message_queue" )
+        @messenger_queue = mock("message_queue" )
         
-        parser = StatemachineParser.new @messenger # @message_queue
+        parser = StatemachineParser.new(@messenger, @messenger_queue)
 
         scxml = <<EOS
 <scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
@@ -213,7 +212,7 @@ EOS
           <log expr="'inside state2 onexit'"/>
      </onexit>
       <transition event="to_state1" target="state1">
-           <send type="'x-mint'" target="target-2" event="'fax.SEND-2'"/>
+           <send ttype="'x-mint'" target="target-2" event="'fax.SEND-2'"/>
         </transition>
   </state>
 
@@ -227,9 +226,9 @@ EOS
         @messenger.should_receive(:puts).with("'inside state2 onentry'" )
         @sm.to_state2
       end
-      
+
       it "should consider onexit" do
-        @sm.to_state2
+        @sm.to_state2           
         @messenger.should_receive(:puts).with("'inside state2 onexit'" )
         @sm.to_state1
       end

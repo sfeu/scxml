@@ -1,5 +1,6 @@
 # -*- coding: raw-text -*-
 require 'rubygems'
+require "bundler/setup"
 require 'statemachine'
 require 'rexml/document'
 require 'rexml/streamlistener'
@@ -57,7 +58,7 @@ end
 class StatemachineParser < Statemachine:: StatemachineBuilder
   include StreamListener
  
-  def initialize(logger = nil)
+  def initialize(logger = nil, queue = nil)
     super()
     # derived by super class Statemachinebuilder - you need to understand how both variables @statemachine and @subject are used in the builders
     #@statemachine = nil
@@ -69,6 +70,7 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
     @state = Array.new
     @substate = Array.new
     @@logger = logger
+    @@queue = queue
   end
 
   def build_from_scxml(filename)
@@ -114,8 +116,13 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
         @current_transition.event = attributes['event']
         @current_transition.target = attributes['target']
         @transitions.push(@current_transition)
+      when 'onentry'
+      when 'onexit'
       when 'log'
-        @actions.push(attributes['expr'])
+        @actions.push(['log', attributes['expr']])
+        #@actions.push(attributes['expr'])
+      when 'send'
+       @actions.push(['send', attributes['target'], attributes['event']])
       else
         @current_element = name
       end
@@ -139,15 +146,67 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
         end
         @substate.push(@state.last)
         @state.pop
-      when 'transition'       # I still have to add the parent state's transitions to the child state
-        action = @actions.last
+      when 'transition'
+      action = @action
+        # action = @actions.last
+        procedure =  Proc.new {
+
+         action.each do |a|
+            case a[0]
+              when 'log'
+              @@logger.puts a[1] if (a[1] and @@logger)
+                action.pop
+              when 'send'
+                @@queue.send(a[1], a[2]) if (a[1] and a[2] and @@queue)
+                action.pop
+              else
+            end
+          end
+        }
         if (@transitions.last.target != nil)     # if it has a target state
-          @state.last.event(@transitions.last.event.to_sym, @transitions.last.target.to_sym, proc { @@logger.puts action if (action and @@logger)  })
+          @state.last.event(@transitions.last.event.to_sym, @transitions.last.target.to_sym, procedure)
         else                                     # it is its own target state
-          @state.last.event(@transitions.last.event.to_sym, @state.last.id.to_sym, proc {  @@logger.puts action if ( action and @@logger)  })
+          @state.last.event(@transitions.last.event.to_sym, @state.last.id.to_sym, procedure)
         end
         @transitions.pop
-        @actions.pop
+      when 'onentry'
+        action = @action
+        #you can only define one action to be taken per state when entering it
+        procedure = Proc.new {
+        # |action|
+          
+          action.each do |a|
+            case a[0]
+              when 'log'
+                @@logger.puts a[1] if (a[1] and @@logger)
+                action.pop
+              when 'send'
+                @@queue.send(a[1],a[2]) if (a[1] and a[2] and @@queue)
+                action.pop
+              else
+            end
+          end
+        }
+        @state.last.on_entry(procedure)
+      when 'onexit'
+        #you can only define one action to be taken per state when exiting it
+     
+        procedure = Proc.new { 
+          # |action|
+          @actions.each do |a|
+            case a[0]
+              when 'log'
+                @@logger.puts a[1] if (a[1] and @@logger)
+                action.pop
+              when 'send'
+                @@queue.send(a[1],a[2]) if (a[1] and a[2] and @@queue)
+                action.pop
+              else
+            end
+          end
+
+        }
+        @state.last.on_exit(procedure)
     end
   end
 

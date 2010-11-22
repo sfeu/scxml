@@ -1,6 +1,4 @@
-require 'rubygems'
-require 'statemachine'
-require 'scxml.rb'
+require 'scxml2.rb'
 
 
 describe 'ATM' do

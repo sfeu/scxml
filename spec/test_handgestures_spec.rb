@@ -1,4 +1,3 @@
-require 'statemachine'
 require 'scxml2.rb'
 
 describe 'state' do

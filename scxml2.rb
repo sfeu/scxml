@@ -7,46 +7,6 @@ require 'rexml/streamlistener'
 
 include REXML
 
-module Statemachine
-  class SuperstateBuilder < Builder
-    include StateBuilding
-    include SuperstateBuilding
-
-    def initialize(id, superstate, statemachine)
-      super statemachine
-      #p "id: #{id}"
-      # p "superstate: #{superstate}"
-      @subject = Superstate.new(id, superstate, statemachine)
-      #   p "subject: #{@subject}"
-      superstate.startstate_id = id if superstate.startstate_id == nil
-
-      # small patch to support redefinition of already existing states without
-      # loosing the already existing transformations. Used to overwrite states
-      # with superstates.
-
-      s = statemachine.get_state(id)
-      if (s)
-        s.transitions.each {|k,v|
-          @subject.add(v)
-        }
-      end
-      statemachine.add_state(@subject)
-    end
-  end
-
-  class StateBuilder < Builder
-    include StateBuilding
-
-    def initialize(id, superstate, statemachine)
-      super statemachine
-#      p "id: #{id}"
-#      p "superstate: #{superstate}"
-      @subject = acquire_state_in(id, superstate)
- #     p "subject: #{@subject}"
-    end
-  end
-end
-
 class State
   attr_accessor :id, :initial
 end

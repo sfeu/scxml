@@ -20,7 +20,7 @@ module Statemachine
       #   p "subject: #{@subject}"
       superstate.startstate_id = id if superstate.startstate_id == nil
 
-      # small patch to support redefinition of already existing states without 
+      # small patch to support redefinition of already existing states without
       # loosing the already existing transformations. Used to overwrite states
       # with superstates.
 
@@ -57,7 +57,7 @@ end
 
 class StatemachineParser < Statemachine:: StatemachineBuilder
   include StreamListener
- 
+
   def initialize(logger = nil, queue = nil)
     super()
     # derived by super class Statemachinebuilder - you need to understand how both variables @statemachine and @subject are used in the builders
@@ -122,7 +122,7 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
         @actions.push(['log', attributes['expr']])
         #@actions.push(attributes['expr'])
       when 'send'
-       @actions.push(['send', attributes['target'], attributes['event']])
+        @actions.push(['send', attributes['target'], attributes['event']])
       else
         @current_element = name
       end
@@ -139,7 +139,7 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
               s.transitions.each {|v,k|
               if (s1)
                 s1.add(k)
-              end 
+              end
               }
             end
           }
@@ -147,66 +147,61 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
         @substate.push(@state.last)
         @state.pop
       when 'transition'
-      action = @action
-        # action = @actions.last
-        procedure =  Proc.new {
-
-         action.each do |a|
+        #action = @actions.last
+        action = @actions
+        procedure = Proc.new do
+          #@@logger.puts action if (action and @@logger)}
+          action.each do |a|
             case a[0]
               when 'log'
-              @@logger.puts a[1] if (a[1] and @@logger)
-                action.pop
+                @@logger.puts a[1]
               when 'send'
-                @@queue.send(a[1], a[2]) if (a[1] and a[2] and @@queue)
-                action.pop
+                @@queue.send(a[1], a[2])
               else
             end
           end
-        }
+        end
         if (@transitions.last.target != nil)     # if it has a target state
           @state.last.event(@transitions.last.event.to_sym, @transitions.last.target.to_sym, procedure)
         else                                     # it is its own target state
           @state.last.event(@transitions.last.event.to_sym, @state.last.id.to_sym, procedure)
         end
+        @actions.clear
         @transitions.pop
       when 'onentry'
-        action = @action
         #you can only define one action to be taken per state when entering it
-        procedure = Proc.new {
-        # |action|
-          
+        action = @actions
+        procedure = proc do
+          #@@logger.puts action if (action and @@logger)}
           action.each do |a|
             case a[0]
               when 'log'
                 @@logger.puts a[1] if (a[1] and @@logger)
-                action.pop
               when 'send'
-                @@queue.send(a[1],a[2]) if (a[1] and a[2] and @@queue)
-                action.pop
+                @@queue.send(a[1], a[2]) if (a[1] and a[2] and @@queue)
               else
             end
           end
-        }
+        end
         @state.last.on_entry(procedure)
+        @actions.clear
       when 'onexit'
         #you can only define one action to be taken per state when exiting it
-     
-        procedure = Proc.new { 
-          # |action|
-          @actions.each do |a|
+        action = @actions
+        procedure = proc do
+          #@@logger.puts action if (action and @@logger)}
+          action.each do |a|
             case a[0]
               when 'log'
                 @@logger.puts a[1] if (a[1] and @@logger)
-                action.pop
               when 'send'
-                @@queue.send(a[1],a[2]) if (a[1] and a[2] and @@queue)
-                action.pop
+                @@queue.send(a[1], a[2]) if (a[1] and a[2] and @@queue)
               else
             end
           end
-
-        }
+        end
         @state.last.on_exit(procedure)
+        @actions.clear
     end
   end
 

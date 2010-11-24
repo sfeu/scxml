@@ -9,7 +9,8 @@ GEM
 
 PLATFORMS
   ruby
+  x86-mingw32
 
 DEPENDENCIES
-  rspec
+  rspec (= 1.3.1)
   statemachine!

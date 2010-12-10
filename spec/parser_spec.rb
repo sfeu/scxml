@@ -11,16 +11,14 @@ describe 'The StatemachineParser for' do
         scxml = <<EOS
 <scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
   <state id="state1">
-     <transition event="event1" target="state2">
-     </transition>
+     <transition event="event1" target="state2"/>
      <transition event="event4" target="state2">
         <log expr="transition executing"/>
      </transition>
   </state>
 
   <state id="state2">
-     <transition event="event2" target="state3">
-     </transition>
+     <transition event="event2" target="state3"/>
   </state>
 
   <state id="state3">
@@ -228,18 +226,22 @@ EOS
       end
 
       it "should consider onexit" do
-        @sm.to_state2           
+        @messenger.should_receive(:puts).with("'inside state2 onentry'" )
+        @sm.to_state2
         @messenger.should_receive(:puts).with("'inside state2 onexit'" )
         @sm.to_state1
       end
 
       it "should receive send inside onentry" do
+        @messenger.should_receive(:puts).with("'inside state2 onentry'" )
         @message_queue.should_receive(:send).with("target","fax.SEND")
         @sm.to_state2
       end
 
       it "should receive send inside a transition" do
+        @messenger.should_receive(:puts).with("'inside state2 onentry'" )
         @sm.to_state2
+        @messenger.should_receive(:puts).with("'inside state2 onexit'" )
         @message_queue.should_receive(:send).with("target-2","fax.SEND-2")
         @sm.to_state1
       end

@@ -19,9 +19,7 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
   include StreamListener
 
   def initialize(logger = nil, queue = nil)
-    super()
-    # derived by super class Statemachinebuilder - you need to understand how both variables @statemachine and @subject are used in the builders
-    #@statemachine = nil
+    super(logger)
     @current_transition = nil
     @current_state = nil
     @current_element = nil
@@ -29,8 +27,8 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
     @actions = Array.new
     @state = Array.new
     @substate = Array.new
-    @@logger = logger
-    @@queue = queue
+    #@@logger = logger
+    #@@queue = queue
   end
 
   def build_from_scxml(filename)
@@ -53,7 +51,7 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
         state = nil
         @current_state = State.new
         @current_state.id = attributes['id']
-        @current_state.initial = attributes['initial']        # dúvida se realmente precisa
+        @current_state.initial = attributes['initial']
         if (@current_state.initial != nil)                    # we already know it is a superstate
             state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
             state.startstate(@current_state.initial.to_sym)
@@ -79,10 +77,9 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
       when 'onentry'
       when 'onexit'
       when 'log'
-        @actions.push(['log', attributes['expr']])
-        #@actions.push(attributes['expr'])
-      when 'send'
-        @actions.push(['send', attributes['target'], attributes['event']])
+        @actions.push(attributes['expr'])
+      #when 'send'
+       # @actions.push(['send', attributes['target'], attributes['event']])
       else
         @current_element = name
       end
@@ -107,61 +104,19 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
         @substate.push(@state.last)
         @state.pop
       when 'transition'
-        #action = @actions.last
-        action = @actions
-        procedure = Proc.new do
-          #@@logger.puts action if (action and @@logger)}
-          action.each do |a|
-            case a[0]
-              when 'log'
-                @@logger.puts a[1]
-              when 'send'
-                @@queue.send(a[1], a[2])
-              else
-            end
-          end
-        end
         if (@transitions.last.target != nil)     # if it has a target state
-          @state.last.event(@transitions.last.event.to_sym, @transitions.last.target.to_sym, procedure)
+          @state.last.event(@transitions.last.event.to_sym, @transitions.last.target.to_sym, @actions)
         else                                     # it is its own target state
-          @state.last.event(@transitions.last.event.to_sym, @state.last.id.to_sym, procedure)
+          @state.last.event(@transitions.last.event.to_sym, @state.last.id.to_sym, @actions)
         end
-        @actions.clear
+        @actions=[]
         @transitions.pop
       when 'onentry'
-        #you can only define one action to be taken per state when entering it
-        action = @actions
-        procedure = proc do
-          #@@logger.puts action if (action and @@logger)}
-          action.each do |a|
-            case a[0]
-              when 'log'
-                @@logger.puts a[1] if (a[1] and @@logger)
-              when 'send'
-                @@queue.send(a[1], a[2]) if (a[1] and a[2] and @@queue)
-              else
-            end
-          end
-        end
-        @state.last.on_entry(procedure)
-        @actions.clear
+        @state.last.on_entry(@actions)
+        @actions=[]
       when 'onexit'
-        #you can only define one action to be taken per state when exiting it
-        action = @actions
-        procedure = proc do
-          #@@logger.puts action if (action and @@logger)}
-          action.each do |a|
-            case a[0]
-              when 'log'
-                @@logger.puts a[1] if (a[1] and @@logger)
-              when 'send'
-                @@queue.send(a[1], a[2]) if (a[1] and a[2] and @@queue)
-              else
-            end
-          end
-        end
-        @state.last.on_exit(procedure)
-        @actions.clear
+        @state.last.on_exit(@actions)
+        @actions=[]
     end
   end
 

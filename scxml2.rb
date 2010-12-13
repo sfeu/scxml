@@ -15,11 +15,13 @@ class Transition
   attr_accessor :event, :target, :action
 end
 
-class StatemachineParser < Statemachine:: StatemachineBuilder
+class StatemachineParser < Statemachine::StatemachineBuilder
   include StreamListener
 
   def initialize(logger = nil, queue = nil)
-    super(logger)
+    super()
+    @statemachine.messenger = logger
+    @statemachine.message_queue = queue
     @current_transition = nil
     @current_state = nil
     @current_element = nil
@@ -78,8 +80,8 @@ class StatemachineParser < Statemachine:: StatemachineBuilder
       when 'onexit'
       when 'log'
         @actions.push(attributes['expr'])
-      #when 'send'
-       # @actions.push(['send', attributes['target'], attributes['event']])
+      when 'send'
+        @actions.push([attributes['target'], attributes['event']])
       else
         @current_element = name
       end

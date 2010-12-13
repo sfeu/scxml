@@ -192,9 +192,9 @@ EOS
       before (:each) do
         @messenger = mock("messenger" )
         
-        @messenger_queue = mock("message_queue" )
+        @message_queue = mock("message_queue" )
         
-        parser = StatemachineParser.new(@messenger, @messenger_queue)
+        parser = StatemachineParser.new(@messenger, @message_queue)
 
         scxml = <<EOS
 <scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
@@ -204,13 +204,13 @@ EOS
   <state id="state2">
      <onentry>
           <log expr="'inside state2 onentry'"/>
-          <send type="'x-mint'" target="target" event="'fax.SEND'"/>
+          <send type="'x-mint'" target="target" event="fax.SEND"/>
      </onentry>
      <onexit>
           <log expr="'inside state2 onexit'"/>
      </onexit>
       <transition event="to_state1" target="state1">
-           <send ttype="'x-mint'" target="target-2" event="'fax.SEND-2'"/>
+           <send ttype="'x-mint'" target="target-2" event="fax.SEND-2"/>
         </transition>
   </state>
 
@@ -222,13 +222,16 @@ EOS
 
       it "should consider onentry" do
         @messenger.should_receive(:puts).with("'inside state2 onentry'" )
+        @message_queue.should_receive(:send).with("target","fax.SEND")
         @sm.to_state2
       end
 
       it "should consider onexit" do
         @messenger.should_receive(:puts).with("'inside state2 onentry'" )
+        @message_queue.should_receive(:send).with("target","fax.SEND")
         @sm.to_state2
         @messenger.should_receive(:puts).with("'inside state2 onexit'" )
+        @message_queue.should_receive(:send).with("target-2","fax.SEND-2")
         @sm.to_state1
       end
 
@@ -240,6 +243,7 @@ EOS
 
       it "should receive send inside a transition" do
         @messenger.should_receive(:puts).with("'inside state2 onentry'" )
+        @message_queue.should_receive(:send).with("target","fax.SEND")
         @sm.to_state2
         @messenger.should_receive(:puts).with("'inside state2 onexit'" )
         @message_queue.should_receive(:send).with("target-2","fax.SEND-2")
@@ -247,4 +251,47 @@ EOS
       end
     end
   end
+
+  describe 'parallel' do
+      before (:each) do
+        parser = StatemachineParser.new
+
+        scxml = <<EOS
+<scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
+  <parallel>
+    <state id="state1">
+      <state id="state11">
+        <transition event="to_12" target="state12"/>
+        <transition cond="In('state21')" target="state13"/>
+      </state>
+      <state id="state12">
+        <transition event="to_13" target="state12"/>
+        <transition cond="In('state21')" target="state13"/>
+      </state>
+      <state id="state13">
+        <transition event="to_11" target="state12"/>
+        <transition cond="In('state22')" target="state11"/>
+      </state>
+    </state>
+
+    <state id="state2" initial="state22">
+      <state id="state21">
+       <transition event="to_22" target="state22"/>
+      </state>
+      <state id="state22">
+        <transition event="to_21" target="state21"/>
+      </state>
+    </state>
+  </parallel>
+</scxml>
+EOS
+
+        @sm = parser.build_from_scxml_string scxml
+      end
+
+      it "should support transitions with In()" do
+
+      end
+    end
+
 end

@@ -12,7 +12,7 @@ class State
 end
 
 class Transition
-  attr_accessor :event, :target, :action
+  attr_accessor :event, :target, :cond
 end
 
 class StatemachineParser < Statemachine::StatemachineBuilder
@@ -20,17 +20,16 @@ class StatemachineParser < Statemachine::StatemachineBuilder
 
   def initialize(logger = nil, queue = nil)
     super()
-    @statemachine.messenger = logger
-    @statemachine.message_queue = queue
+    @actions = Array.new
     @current_transition = nil
     @current_state = nil
     @current_element = nil
-    @transitions = Array.new
-    @actions = Array.new
+    @parallel = nil
     @state = Array.new
+    @statemachine.messenger = logger
+    @statemachine.message_queue = queue
     @substate = Array.new
-    #@@logger = logger
-    #@@queue = queue
+    @transitions = Array.new
   end
 
   def build_from_scxml(filename)
@@ -49,6 +48,8 @@ class StatemachineParser < Statemachine::StatemachineBuilder
 
   def tag_start(name, attributes)
     case name
+      when 'parallel'
+        @parallel = Statemachine::ParallelStatemachine.new()
       when 'state'
         state = nil
         @current_state = State.new
@@ -75,6 +76,11 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         @current_transition = Transition.new
         @current_transition.event = attributes['event']
         @current_transition.target = attributes['target']
+        if attributes['cond']
+          @current_transition.cond = attributes['cond']
+        else
+          @current_transition.cond = true
+        end
         @transitions.push(@current_transition)
       when 'onentry'
       when 'onexit'
@@ -89,7 +95,10 @@ class StatemachineParser < Statemachine::StatemachineBuilder
 
   def tag_end(name) # think we really need this, since only when reaching the end tag we are sure about that we have added all events, actions and so on.
     case name
+      when 'parallel'
+        @statemachine = @parallel
       when 'state'
+        # Adds the superstate's transitions to all its substates
         if (@state.last.is_a? Statemachine::SuperstateBuilder)
           s = statemachine.get_state(@state.last.subject.id)
           @substate.each{|j|
@@ -103,13 +112,24 @@ class StatemachineParser < Statemachine::StatemachineBuilder
             end
           }
         end
+        # In case of parallel statemachines(?) the outmost states will become parallel statemachines
+        # only considering parallel on a root level
+        if @state.size == 1 and @parallel.is_a? Statemachine::ParallelStatemachine
+          statemachine = Statemachine::Statemachine.new
+          @substate.each do |j|
+            statemachine.add_state(j)
+          end
+          @parallel.add(statemachine)
+        end
+
         @substate.push(@state.last)
+        @substate = [] if @state.size == 1
         @state.pop
       when 'transition'
         if (@transitions.last.target != nil)     # if it has a target state
-          @state.last.event(@transitions.last.event.to_sym, @transitions.last.target.to_sym, @actions)
+          @state.last.event(@transitions.last.event.to_sym, @transitions.last.target.to_sym, @actions, @transitions.last.cond)
         else                                     # it is its own target state
-          @state.last.event(@transitions.last.event.to_sym, @state.last.id.to_sym, @actions)
+          @state.last.event(@transitions.last.event.to_sym, @state.last.id.to_sym, @actions, @transitions.last.cond)
         end
         @actions=[]
         @transitions.pop

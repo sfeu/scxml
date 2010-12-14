@@ -49,7 +49,7 @@ class StatemachineParser < Statemachine::StatemachineBuilder
   def tag_start(name, attributes)
     case name
       when 'parallel'
-        @parallel = Statemachine::ParallelStatemachine.new()
+        @parallel = Statemachine::ParallelStatemachine.new([])
       when 'state'
         state = nil
         @current_state = State.new
@@ -115,9 +115,9 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         # In case of parallel statemachines(?) the outmost states will become parallel statemachines
         # only considering parallel on a root level
         if @state.size == 1 and @parallel.is_a? Statemachine::ParallelStatemachine
-          statemachine = Statemachine::Statemachine.new
+          statemachine = Statemachine::Statemachine.new(@state.last.subject)
           @substate.each do |j|
-            statemachine.add_state(j)
+            statemachine.add_state(j.subject)
           end
           @parallel.add(statemachine)
         end

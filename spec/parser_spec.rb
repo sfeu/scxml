@@ -2,6 +2,7 @@ require 'scxml2.rb'
 
 describe 'The StatemachineParser for' do
   describe 'states' do
+=begin
     describe 'without a superstate' do
       before (:each) do
         @messenger = mock("messenger" )
@@ -251,26 +252,22 @@ EOS
       end
     end
   end
+=end
 
   describe 'parallel' do
       before (:each) do
         parser = StatemachineParser.new
 
         scxml = <<EOS
+<?xml version="1.0"?>
 <scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
   <parallel>
     <state id="state1">
       <state id="state11">
-        <transition event="to_12" target="state12"/>
-        <transition cond="In('state21')" target="state13"/>
+        <transition event="to_12" cond="In('state22')" target="state12"/>
       </state>
       <state id="state12">
-        <transition event="to_13" target="state12"/>
-        <transition cond="In('state21')" target="state13"/>
-      </state>
-      <state id="state13">
-        <transition event="to_11" target="state12"/>
-        <transition cond="In('state22')" target="state11"/>
+        <transition event="to_11" cond="In('state21')" target="state12"/>
       </state>
     </state>
 
@@ -289,9 +286,32 @@ EOS
         @sm = parser.build_from_scxml_string scxml
       end
 
-      it "should support transitions with In()" do
-
+      it "start with two initial states" do
+        @sm.states.should == [:state11,:state22]
       end
-    end
 
+      it "support transitions for both parallel superstates" do
+        @sm.process_event(:to_12)
+        @sm.process_event(:to_21)
+        @sm.states.should == [:state12,:state21]
+      end
+
+
+      it "support testing with 'in' condition for primitive states " do
+          @sm.process_event(:to_12)
+          @sm.In(:state12).should == true
+      end
+               
+      it "support testing with 'in' condition for  superstates " do
+          @sm.process_event(:to_12)
+          @sm.In(:state1).should == true
+      end
+
+      it "support testing with 'in' condition for parallel  superstates " do
+        @sm.process_event(:to_12)
+        @sm.In(:state2).should == true
+        @sm.In(:state1).should == true
+      end
+   end
+  end
 end

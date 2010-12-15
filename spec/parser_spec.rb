@@ -261,7 +261,7 @@ EOS
         scxml = <<EOS
 <?xml version="1.0"?>
 <scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
-  <parallel>
+  <parallel id="parallel">
     <state id="state1">
       <state id="state11">
         <transition event="to_12" cond="In('state22')" target="state12"/>

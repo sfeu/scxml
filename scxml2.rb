@@ -114,6 +114,8 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         end
         # In case of parallel statemachines(?) the outmost states will become parallel statemachines
         # only considering parallel on a root level
+
+        @substate.push(@state.last)
         if @state.size == 1 and @parallel.is_a? Statemachine::ParallelStatemachine
           statemachine = Statemachine::Statemachine.new(@state.last.subject)
           @substate.each do |j|
@@ -121,8 +123,6 @@ class StatemachineParser < Statemachine::StatemachineBuilder
           end
           @parallel.add(statemachine)
         end
-
-        @substate.push(@state.last)
         @substate = [] if @state.size == 1
         @state.pop
       when 'transition'

@@ -49,7 +49,7 @@ class StatemachineParser < Statemachine::StatemachineBuilder
   def tag_start(name, attributes)
     case name
       when 'parallel'
-        @parallel = Statemachine::Parallelstate.new(attributes['id'], @subject, @statemachine)
+        @parallel = Statemachine::ParallelStateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
       when 'state'
         state = nil
         @current_state = State.new
@@ -96,8 +96,7 @@ class StatemachineParser < Statemachine::StatemachineBuilder
   def tag_end(name) # think we really need this, since only when reaching the end tag we are sure about that we have added all events, actions and so on.
     case name
       when 'parallel'
-        # I think maybe we need to clear the statemachine. Not sure.
-        @statemachine.add_state(@parallel)
+        @statemachine.add_state(@parallel.subject)
       when 'state'
         # Adds the superstate's transitions to all its substates
         if (@state.last.is_a? Statemachine::SuperstateBuilder)
@@ -117,14 +116,15 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         # only considering parallel on a root level
 
         @substate.push(@state.last)
-        if @state.size == 1 and @parallel.is_a? Statemachine::Parallelstate
-          statemachine = Statemachine::Statemachine.new(@state.last.subject)
+        if @state.size == 1 and @parallel.is_a? Statemachine::ParallelStateBuilder
+          statemachine_aux = Statemachine::Statemachine.new(@state.last.subject)
           @substate.each do |j|
-            statemachine.add_state(j.subject)
+            statemachine_aux.add_state(j.subject)
+            @statemachine.remove_state(j.subject)
           end
-          @parallel.add_statemachine(statemachine)
+          statemachine_aux.reset
+          @parallel.subject.add_statemachine(statemachine_aux)
         end
-
         @substate = [] if @state.size == 1
         @state.pop
       when 'transition'

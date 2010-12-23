@@ -2,7 +2,7 @@ require 'scxml2.rb'
 
 describe 'The StatemachineParser for' do
   describe 'states' do
-=begin
+begin
     describe 'without a superstate' do
       before (:each) do
         @messenger = mock("messenger" )
@@ -252,7 +252,6 @@ EOS
       end
     end
   end
-=end
 
   describe 'parallel' do
       before (:each) do
@@ -296,7 +295,6 @@ EOS
         @sm.states.should == [:state12,:state21]
       end
 
-
       it "support testing with 'in' condition for primitive states " do
           @sm.process_event(:to_12)
           @sm.In(:state12).should == true
@@ -307,7 +305,7 @@ EOS
           @sm.In(:state1).should == true
       end
 
-      it "support testing with 'in' condition for parallel  superstates " do
+      it "support testing with 'in' condition for parallel superstates " do
         @sm.process_event(:to_12)
         @sm.In(:state2).should == true
         @sm.In(:state1).should == true

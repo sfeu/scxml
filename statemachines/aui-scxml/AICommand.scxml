@@ -1,0 +1,25 @@
+<scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
+  <state id="AIO">
+    <state id="initialized">
+      <transition event="organize" target="organized"/>
+    </state>
+    <state id="organized">
+      <transition event="present" target="presenting"/>
+    </state>
+    <state id="suspended">
+      <transition event="organize" target="organized"/>
+    </state>
+    <state id="presenting">
+      <transition event="suspend" target="suspended"/>
+      <state id="defocused">
+        <transition event="focus" target="focused"/>
+        <transition event="next" target="focused"/>
+        <transition event="prev" target="focused"/>
+        <transition event="parent" target="focused"/>
+      </state>
+      <state id="focused">
+        <transition event="defocus" target="defocused"/>
+      </state>
+    </state>
+  </state>
+</scxml>

@@ -1,53 +1,58 @@
-require File.dirname(__FILE__) + '/spec_helper'
+require File.dirname(__FILE__) + '/../../spec_helper'
 
-describe "AIO" do
+describe "AICommand" do
   before (:each) do
     @statemachine = Statemachine.build do
-        superstate :AIO do
-           trans :initialized, :organize, :organized
-           trans :organized, :present, :presenting
-           trans :suspended, :organize, :organized
+        superstate :AICommand do
+          trans :initialized, :organize, :organized
+          trans :organized, :present, :presenting
+          trans :suspended, :organize, :organized
 
-           superstate :presenting do
+          superstate :presenting do
              event :suspend, :suspended
 
-             trans :defocused, :focus, :focused
-             trans :defocused, :next, :focused#, :focus_next
-             trans :defocused, :prev, :focused#, :focus_prev
-             trans :defocused, :parent, :focused#, :focus_parent
-             trans :focused, :defocus, :defocused
-           end
-        end
-     end
+             trans :defocused, :focus, :focused_H
+             trans :defocused, :next, :focused_H#, :focus_next
+             trans :defocused, :prev, :focused_H#, :focus_prev
+             trans :defocused, :parent, :focused_H#, :focus_parent
+
+             superstate :focused do
+               event :defocus, :defocused
+
+               trans :deactivated, :activate, :activated
+               trans :activated, :deactivate, :deactivated
+             end
+          end
+         end
+    end
   end
 
-
-  it "should start in 'initialized'" do
-      @statemachine.state.should == :initialized
-  end
-
-  it "should enter the superstate" do
-      @statemachine.organize
-      @statemachine.state.should == :organized
-      @statemachine.present
-      @statemachine.state.should == :defocused
-  end
-
-  it "should support transitions inside the superstate" do
+  it "should enter the nested superstate :focused" do
       @statemachine.organize
       @statemachine.present
       @statemachine.focus
-      @statemachine.state.should == :focused
-      @statemachine.defocus
-      @statemachine.state.should == :defocused
+      @statemachine.state.should == :deactivated
   end
 
-  it "should leave the superstate" do
+  it "should support transitions inside :focused" do
       @statemachine.organize
       @statemachine.present
-      @statemachine.suspend
-      @statemachine.state.should == :suspended
+      @statemachine.focus
+      @statemachine.activate
+      @statemachine.state.should == :activated
+      @statemachine.deactivate
+      @statemachine.state.should == :deactivated
   end
 
-
+  it "should leave the superstate :focused and return to the same point it left" do
+      @statemachine.organize
+      @statemachine.present
+      @statemachine.focus
+      @statemachine.activate
+      @statemachine.state.should == :activated
+      @statemachine.defocus
+      @statemachine.state.should == :defocused
+      @statemachine.focus
+      @statemachine.state.should == :activated
+  end
 end

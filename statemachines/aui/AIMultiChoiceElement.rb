@@ -8,7 +8,7 @@ module MINT
          @statemachine = Statemachine.build do
             superstate :AIMultiChoiceElement do
               trans :initialized, :organize, :organized
-              trans :organized, :present, :presenting
+              trans :organized, :present, :presenting_H
               trans :suspended, :organize, :organized
 
               superstate :presenting do

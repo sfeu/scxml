@@ -1,9 +1,9 @@
-require File.dirname(__FILE__) + '/spec_helper'
+require File.dirname(__FILE__) + '/../../spec_helper'
 
 describe "AIINContinous" do
   before (:each) do
     @statemachine = Statemachine.build do
-      superstate :AIINContinous do
+      superstate :AIOUTContinous do
         trans :initialized, :organize, :organized
         trans :organized, :present, :presenting
         trans :suspended, :organize, :organized
@@ -19,19 +19,19 @@ describe "AIINContinous" do
           superstate :focused do
             event :defocus, :defocused
 
-            # TODO how to implement the sensitivity condition?
-            trans :waiting, :decrease, :decreasing#, nil, (x1<x0-sensitivy)
-            trans :waiting, :increase, :increasing#, nil, (x1>x0-sensitivy)
-            trans :increasing, :decrease, :decreasing#, nil, (x1<x0-sensitivy)
-            trans :decreasing, :increase, :increasing#, nil, (x1>x0-sensitivy)
+            trans :waiting, :progress, :progressing
+            trans :waiting, :regress, :regressing
 
-            # TODO how to implement transitions without events
-            #trans :decreasing, nil, :waiting, nil, (Dt>tmax)
-            #trans :increasing, nil, :waiting, nil, (Dt>tmax)
+            superstate :moving do
+              event :halt, :waiting
+
+              trans :progressing, :regress, :regressing
+              trans :regressing, :progress, :progressing
+            end
           end
-         end
+        end
       end
-    end
+   end
   end
 
 
@@ -46,15 +46,26 @@ describe "AIINContinous" do
       @statemachine.organize
       @statemachine.present
       @statemachine.focus
-      @statemachine.increase
-      @statemachine.state.should == :increasing
-      @statemachine.decrease
-      @statemachine.state.should == :decreasing
+      @statemachine.progress
+      @statemachine.state.should == :progressing
   end
 
-=begin
-  it "should support spontaneous transitions" do
+  it "should support transitions inside :moving" do
+      @statemachine.organize
+      @statemachine.present
+      @statemachine.focus
+      @statemachine.progress
+      @statemachine.state.should == :progressing
+      @statemachine.regress
+      @statemachine.state.should == :regressing
   end
-=end
 
+  it "should leave :moving" do
+      @statemachine.organize
+      @statemachine.present
+      @statemachine.focus
+      @statemachine.progress
+      @statemachine.halt
+      @statemachine.state.should == :waiting
+   end
 end

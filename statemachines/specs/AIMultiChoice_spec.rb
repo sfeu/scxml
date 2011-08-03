@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + '/spec_helper'
+require File.dirname(__FILE__) + '/../../spec_helper'
 
 describe "AIMultiChoice" do
   before (:each) do
@@ -10,10 +10,10 @@ describe "AIMultiChoice" do
 
         superstate :presenting do
           event :suspend, :suspended
-
             parallel :p do
               statemachine :s1 do
-                trans :listing, :drop, :dropped, :drop_all_dragging, In(:focused)
+                # TODO make In() work
+                trans :listing, :drop, :dropped#, nil, In(:focused)#, :drop_all_dragging, In(:focused)
                 trans :listing, :choose_all, :choosing
                 trans :listing, :unchoose_all, :unchoosing
                 # TODO how to implement transitions without events
@@ -26,10 +26,10 @@ describe "AIMultiChoice" do
                   event :suspend, :suspended
 
                   trans :defocused, :focus, :focused
-                  trans :defocused, :next, :focused, :focus_next
-                  trans :defocused, :prev, :focused, :focus_prev
-                  trans :defocused, :parent, :focused, :focus_parent
-                  trans :defocused, :child, :focused, :focus_child
+                  trans :defocused, :next, :focused#, :focus_next
+                  trans :defocused, :prev, :focused#, :focus_prev
+                  trans :defocused, :parent, :focused#, :focus_parent
+                  trans :defocused, :child, :focused#, :focus_child
                   trans :focused, :defocus, :defocused
                 end
               end
@@ -39,6 +39,18 @@ describe "AIMultiChoice" do
       end
     end
 
-  it "should " do
+  it "should support parallel transitions" do
+    @statemachine.organize
+    @statemachine.present
+    @statemachine.states_id.should == [:listing, :defocused]
+    @statemachine.choose_all
+    @statemachine.focus
+    @statemachine.states_id.should == [:choosing, :focused]
+    @statemachine.defocus
+    @statemachine.states_id.should == [:choosing, :defocused]
   end
+
+  # TODO implement test to check if In() is working
+  # TODO implement test for spontaneous transitions
+
 end

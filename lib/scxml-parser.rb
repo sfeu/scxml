@@ -30,6 +30,10 @@ class StatemachineParser < Statemachine::StatemachineBuilder
     @statemachine.message_queue = queue
     @substate = Array.new
     @transitions = Array.new
+    @history_states = Array.new
+    @history_target = Array.new
+    @history_state = nil
+    @history = false
   end
 
   def build_from_scxml(filename)
@@ -84,6 +88,8 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         @transitions.push(@current_transition)
       when 'onentry'
       when 'onexit'
+      when 'history'
+        @history=true
       when 'log'
         @actions.push(attributes['expr'])
       when 'send'
@@ -93,21 +99,31 @@ class StatemachineParser < Statemachine::StatemachineBuilder
       end
   end
 
-  def tag_end(name) # think we really need this, since only when reaching the end tag we are sure about that we have added all events, actions and so on.
+  def tag_end(name)
     case name
       when 'parallel'
         @statemachine.add_state(@parallel.subject)
       when 'state'
-        # Adds the superstate's transitions to all its substates
         if (@state.last.is_a? Statemachine::SuperstateBuilder)
           s = statemachine.get_state(@state.last.subject.id)
+
+          # Changing the state's id
+          if (s.id == @history_state)
+            #@statemachine.remove_state(s)
+            s.id = (s.id.to_s + "_H").to_sym
+            s.default_history=@history_target.last.to_sym
+            @history_target.pop
+            #@statemachine.add_state(s)
+          end
+
+          # Adds the superstate's transitions to all its substates
           @substate.each{|j|
             if (s)
               s1 = statemachine.get_state(j.subject.id)
               s.transitions.each {|v,k|
-              if (s1)
-                s1.add(k)
-              end
+                if (s1)
+                  s1.add(k)
+                end
               }
             end
           }
@@ -125,13 +141,39 @@ class StatemachineParser < Statemachine::StatemachineBuilder
           statemachine_aux.reset
           @parallel.subject.add_statemachine(statemachine_aux)
         end
-        @substate = [] if @state.size == 1
+        if @state.size == 1
+          @substate = []
+          # TODO make this better. Too inefficient
+          while (!(@history_states.size == 0))
+            # change every transitions where @history_states.last was the target state to history_states.last+"_H"
+            # for every history state
+            @statemachine.states.each_value do |s|
+               s.transitions.each_value do |t|
+                 if (t.destination_id == @history_states.last)
+                   t.destination_id = (t.destination_id.to_s + "_H").to_s
+                 end
+               end
+            end
+            @history_states.pop
+          end
+        end
         @state.pop
       when 'transition'
-        if (@transitions.last.target != nil)     # if it has a target state
-          @state.last.event(@transitions.last.event.to_sym, @transitions.last.target.to_sym, @actions, @transitions.last.cond)
-        else                                     # it is its own target state
-          @state.last.event(@transitions.last.event.to_sym, @state.last.id.to_sym, @actions, @transitions.last.cond)
+        if (@transitions.last.event == nil)
+          if @history
+            @history_states.push(@state.last.subject.id)
+            @history_state = @state.last.subject.id
+            @history_target.push(@transitions.last.target)
+            @history = false
+          else
+            # TODO spontaneous transitions
+          end
+        else
+          if (@transitions.last.target != nil)     # if it has a target state
+            @state.last.event(@transitions.last.event.to_sym, @transitions.last.target.to_sym, @actions, @transitions.last.cond)
+          else                                     # it is its own target state
+            @state.last.event(@transitions.last.event.to_sym, @state.last.id.to_sym, @actions, @transitions.last.cond)
+          end
         end
         @actions=[]
         @transitions.pop
@@ -141,6 +183,8 @@ class StatemachineParser < Statemachine::StatemachineBuilder
       when 'onexit'
         @state.last.on_exit(@actions)
         @actions=[]
+      when 'history'
+        @history = false
     end
   end
 

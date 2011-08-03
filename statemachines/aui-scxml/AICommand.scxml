@@ -1,5 +1,5 @@
 <scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
-  <state id="AIO">
+  <state id="AICommand">
     <state id="initialized">
       <transition event="organize" target="organized"/>
     </state>
@@ -19,6 +19,15 @@
       </state>
       <state id="focused">
         <transition event="defocus" target="defocused"/>
+        <state id="deactivated">
+          <transition event="activate" target="activated"/>
+        </state>
+        <state id="activated">
+          <transition event="deactivate" target="deactivated"/>
+        </state>
+        <history id="history" type="deep">
+          <transition target="deactivated"/>
+        </history>
       </state>
     </state>
   </state>

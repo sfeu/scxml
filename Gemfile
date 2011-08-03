@@ -1,2 +1,2 @@
-gem "statemachine",  :path => ".."+File::ALT_SEPARATOR+"statemachine"
+gem "statemachine", :path => "../statemachine"
 gem "rspec", "1.3.1"

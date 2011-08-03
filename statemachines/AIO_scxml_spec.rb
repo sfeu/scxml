@@ -1,9 +1,9 @@
-require File.dirname(__FILE__) + '/spec_helper'
+require File.dirname(__FILE__) + '/../spec_helper'
 
 describe "AIO" do
   before (:each) do
     parser = StatemachineParser.new
-    @statemachine = parser.build_from_scxml "../aui-scxml/AIO.scxml"
+    @statemachine = parser.build_from_scxml "aui-scxml/AIO.scxml"
    end
 
 

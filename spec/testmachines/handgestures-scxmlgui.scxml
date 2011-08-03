@@ -97,8 +97,10 @@
    </state>
   </state>
   <state id="no_hands"><!--   node-size-and-position x=20.0 y=497.0 w=60.0 h=30.0  -->
-   <transition event="one_hand" target="one_hand"><!--   edge-path [one_hand]  x=96.0 y=545.0  --></transition>
-   <transition event="two_hands" target="two_hands"><!--   edge-path [two_hands]  x=70.0 y=477.0 pointx=0.0 pointy=35.0 offsetx=-5.0 offsety=11.0  --></transition>
+   <transition event="one_hand" target="one_hand"><!--   edge-path [one_hand]  x=96.0 y=545.0  -->
+   </transition>
+   <transition event="two_hands" target="two_hands"><!--   edge-path [two_hands]  x=70.0 y=477.0 pointx=0.0 pointy=35.0 offsetx=-5.0 offsety=11.0  -->
+   </transition>
   </state>
  </state>
 </scxml>

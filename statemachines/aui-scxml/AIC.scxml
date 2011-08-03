@@ -1,5 +1,5 @@
 <scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
-  <state id="AIO">
+  <state id="AIC">
     <state id="initialized">
       <transition event="organize" target="organized"/>
     </state>
@@ -16,9 +16,10 @@
         <transition event="next" target="focused"/>
         <transition event="prev" target="focused"/>
         <transition event="parent" target="focused"/>
+        <transition event="child" target="focused"/>
       </state>
       <state id="focused">
-        <transition event="defocus" target="defocused">
+        <transition event="defocus" target="defocused"/>
       </state>
     </state>
   </state>

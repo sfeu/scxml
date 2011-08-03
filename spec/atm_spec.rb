@@ -1,9 +1,8 @@
-require 'scxml2.rb'
-
+require File.dirname(__FILE__) + '/../spec_helper'
 
 describe 'ATM' do
   before (:each) do
-        
+
     @atm = Statemachine.build do
       startstate :ocioso
       superstate :operando do
@@ -12,7 +11,7 @@ describe 'ATM' do
           on_entry Proc.new{puts "Digite a senha"}
         end
         state :senha_inserida do
-          event :senha_errada, :esperando_senha, Proc.new {puts "Senha incorreta."} 
+          event :senha_errada, :esperando_senha, Proc.new {puts "Senha incorreta.";true}
           event :senha_correta, :esperando_opcao
           on_entry :verifica_senha
         end
@@ -22,21 +21,21 @@ describe 'ATM' do
         end
         state :opcao_escolhida do
           event :saldo, :exibindo_saldo
-          event :saque, :emitindo_quantia 
+          event :saque, :emitindo_quantia
           event :invalida, :esperando_opcao
           on_entry :verifica_escolha
         end
         state :exibindo_saldo do
           event :nova_opcao, :esperando_opcao
           on_entry :saldo
-          
+
         end
         state :emitindo_quantia do
           event :nova_opcao, :esperando_opcao
           on_entry :emitindo
         end
-        
-        event :cancelar, :ocioso, Proc.new {puts "Saindo..."}
+
+        event :cancelar, :ocioso, Proc.new {puts "Saindo...";true}
       end
 
       state :ocioso do
@@ -45,15 +44,15 @@ describe 'ATM' do
       end
       stub_context :verbose => true # this is an nternal  verbose stub context from statemachine that prints out action invocations.
     end
-    
-    # uncomment the next line to start testing your code 
-    # @atm = Statemachine.build_from_scxml "testmachines/atm_enhanced.xml" 
+
+    # uncomment the next line to start testing your code
+    # @atm = Statemachine.build_from_scxml "testmachines/atm_enhanced.xml"
   end
 
   it "should start with the correct state >ocioso<" do
    @atm.state.should equal(:ocioso)
   end
-  
+
   it "should support transitions" do
     @atm.cartao
     @atm.state.should==:esperando_senha

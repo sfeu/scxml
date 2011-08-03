@@ -1,0 +1,32 @@
+<scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml"><!--   node-size-and-position x=0.0 y=0.0 w=299.19717193536917 h=692.0  -->
+  <state id="initialized"><!--   node-size-and-position x=118.75 y=43.0 w=70.0 h=20.0  -->
+   <transition event="organize" target="organized"></transition>
+  </state>
+  <state id="organized"><!--   node-size-and-position x=123.75 y=113.0 w=60.0 h=20.0  -->
+   <transition event="present" target="presenting"></transition>
+  </state>
+  <state id="presenting" initial="defocused"><!--   node-size-and-position x=20.0 y=183.0 w=161.5 h=356.0  -->
+   <transition event="suspend" target="suspended"></transition>
+   <state id="focused" initial="deactivated"><!--   node-size-and-position x=20.0 y=113.0 w=121.5 h=223.0  -->
+    <transition event="defocus" target="defocused"><!--   edge-path [defocused]  x=78.78709972846912 y=98.06535407059803  --></transition>
+    <state id="deactivated"><!--   node-size-and-position x=29.0 y=113.0 w=70.0 h=20.0  -->
+     <transition event="activate" target="activated"><!--   edge-path [activated]  x=70.0 y=158.0 pointx=0.0 pointy=19.0 offsetx=1.0 offsety=6.0  --></transition>
+    </state>
+    <state id="activated"><!--   node-size-and-position x=34.0 y=183.0 w=60.0 h=20.0  -->
+     <transition event="deactivate" target="deactivated"><!--   edge-path [deactivated]  x=50.0 y=158.0 pointx=0.0 pointy=10.0 offsetx=-1.0 offsety=-1.0  --></transition>
+    </state>
+    <history id="history" type="deep"><!--   node-size-and-position x=39.0 y=43.0 w=50.0 h=20.0  -->
+     <transition target="deactivated"></transition>
+    </history>
+   </state>
+   <state id="defocused"><!--   node-size-and-position x=50.75 y=43.0 w=60.0 h=20.0  -->
+    <transition event="focus" target="focused"><!--   edge-path [focused]  x=117.5 y=88.0  --></transition>
+    <transition event="next" target="focused"><!--   edge-path [focused]  x=98.14354986423456 y=93.03267703529902  --></transition>
+    <transition event="prev" target="focused"><!--   edge-path [focused]  x=136.85645013576544 y=82.96732296470098  --></transition>
+    <transition event="parent" target="focused"><!--   edge-path [focused]  x=156.21290027153088 y=77.93464592940197  --></transition>
+   </state>
+  </state>
+  <state id="suspended"><!--   node-size-and-position x=125.75 y=589.0 w=60.0 h=20.0  -->
+   <transition event="organize" target="organized"><!--   edge-path [organized]  x=211.75 y=361.0  --></transition>
+  </state>
+</scxml>

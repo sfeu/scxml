@@ -1,5 +1,4 @@
-require 'scxml2.rb'
-
+require File.dirname(__FILE__) + '/spec_helper'
 
 describe 'ATM' do
   before (:each) do
@@ -12,7 +11,7 @@ describe 'ATM' do
           on_entry Proc.new{puts "Digite a senha"}
         end
         state :senha_inserida do
-          event :senha_errada, :esperando_senha, Proc.new {puts "Senha incorreta."} 
+          event :senha_errada, :esperando_senha, Proc.new {puts "Senha incorreta.";true}
           event :senha_correta, :esperando_opcao
           on_entry :verifica_senha
         end
@@ -36,7 +35,7 @@ describe 'ATM' do
           on_entry :emitindo
         end
         
-        event :cancelar, :ocioso, Proc.new {puts "Saindo..."}
+        event :cancelar, :ocioso, Proc.new {puts "Saindo...";true}
       end
 
       state :ocioso do

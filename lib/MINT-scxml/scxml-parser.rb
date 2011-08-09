@@ -52,6 +52,20 @@ class StatemachineParser < Statemachine::StatemachineBuilder
 
   def tag_start(name, attributes)
     case name
+      when 'scxml'
+        if attributes['name']
+          state = nil
+          @current_state = State.new
+          @current_state.id = attributes['name']
+          @current_state.initial = attributes['initial']
+          if (@current_state.initial != nil)
+            state = Statemachine::SuperstateBuilder.new(attributes['name'].to_sym, @subject, @statemachine)
+            state.startstate(@current_state.initial.to_sym)
+          else
+            state = Statemachine::StateBuilder.new(attributes['name'].to_sym, @subject, @statemachine)
+          end
+          @state.push(state)
+        end
       when 'parallel'
         @parallel = Statemachine::ParallelStateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
       when 'state'
@@ -91,9 +105,11 @@ class StatemachineParser < Statemachine::StatemachineBuilder
       when 'history'
         @history=true
       when 'log'
-        @actions.push(attributes['expr'])
+        @actions.push(["log", attributes['expr']])
       when 'send'
-        @actions.push([attributes['target'], attributes['event']])
+        @actions.push(["send", attributes['target'], attributes['event']])
+      when 'invoke'
+        @actions.push(["invoke", attributes['src'].to_sym])
       else
         @current_element = name
       end
@@ -173,7 +189,7 @@ class StatemachineParser < Statemachine::StatemachineBuilder
           if (@transitions.last.target != nil)     # if it has a target state
             @state.last.event(@transitions.last.event.to_sym, @transitions.last.target.to_sym, @actions, @transitions.last.cond)
           else                                     # it is its own target state
-            @state.last.event(@transitions.last.event.to_sym, @state.last.id.to_sym, @actions, @transitions.last.cond)
+            @state.last.event(@transitions.last.event.to_sym, @state.last.subject.id.to_sym, @actions, @transitions.last.cond)
           end
         end
         @actions=[]

@@ -1,4 +1,4 @@
-class Scxml::MINT
+class SCXML_MINT
   VERSION = '1.0.0'
 end
 

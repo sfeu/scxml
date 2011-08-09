@@ -3,7 +3,7 @@ require File.dirname(__FILE__) + '/spec_helper'
 describe 'state' do
   before (:each) do
     parser = StatemachineParser.new
-    @sm = parser.build_from_scxml "testmachines/handgestures-scxmlgui.scxml"
+    @sm = parser.build_from_scxml "spec/testmachines/handgestures-scxmlgui.scxml"
   end
 
   it "should start with the correct initial state >no_hands<" do

@@ -256,8 +256,6 @@ EOS
 
   describe 'parallel' do
       before (:each) do
-        pending ("problem with finding parallel states - sfeu will fix this")
-
         parser = StatemachineParser.new
 
         scxml = <<EOS
@@ -289,32 +287,29 @@ EOS
       end
 
       it "start with two initial states" do
-        pending ("problem with finding parallel states - sfeu will fix this")
-
         @sm.states_id.should == [:state11,:state22]
       end
 
       it "support transitions for both parallel superstates" do
-        pending ("problem with finding parallel states - sfeu will fix this")
         @sm.process_event(:to_12)
+        @sm.In(:state12).should == true
+        p "#{@sm.states_id}"
         @sm.process_event(:to_21)
+        @sm.In(:state21).should == true
         @sm.states_id.should == [:state12,:state21]
       end
 
       it "support testing with 'in' condition for primitive states " do
-        pending ("problem with finding parallel states - sfeu will fix this")
           @sm.process_event(:to_12)
           @sm.In(:state12).should == true
       end
                
       it "support testing with 'in' condition for  superstates " do
-        pending ("problem with finding parallel states - sfeu will fix this")
           @sm.process_event(:to_12)
           @sm.In(:state1).should == true
       end
 
       it "support testing with 'in' condition for parallel superstates " do
-        pending ("problem with finding parallel states - sfeu will fix this")
         @sm.process_event(:to_12)
         @sm.In(:state2).should == true
         @sm.In(:state1).should == true

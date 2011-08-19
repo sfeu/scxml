@@ -1,8 +1,32 @@
 require File.dirname(__FILE__) + '/spec_helper'
 
+class TestContext
+  def print_distance
+  end
+  def start_confirm_timeout
+  end
+  def stop_confirm_timeout
+  end
+  def reset_confirm_ticker
+  end
+  def command_timeout_start_prev
+  end
+  def command_timeout_start_next
+  end
+  def command_timeout_stop
+  end
+  def issued_rev
+  end
+  def issued_next
+  end
+  def tick
+  end
+end
+
 describe 'state' do
   before (:each) do
-    parser = StatemachineParser.new
+    context = TestContext.new
+    parser = StatemachineParser.new(context)
     @sm = parser.build_from_scxml "spec/testmachines/handgestures-scxmlgui.scxml"
   end
 

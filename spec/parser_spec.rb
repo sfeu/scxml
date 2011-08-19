@@ -7,7 +7,7 @@ describe 'The StatemachineParser for' do
       before (:each) do
         @messenger = mock("messenger" )
         
-        parser = StatemachineParser.new @messenger
+        parser = StatemachineParser.new(nil,@messenger)
 
         scxml = <<EOS
 <scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
@@ -54,7 +54,7 @@ EOS
       before (:each) do
         @messenger = mock("messenger" )
         
-        parser = StatemachineParser.new @messenger
+        parser = StatemachineParser.new(nil,@messenger)
 
         scxml = <<EOS
 <?xml version="1.0"?>
@@ -125,30 +125,28 @@ EOS
     end
     describe "in double nested superstates" do
       before (:each) do
-        @messenger = mock("messenger" )
-        
-        parser = StatemachineParser.new @messenger
 
+        parser = StatemachineParser.new
         scxml = <<EOS
 <?xml version="1.0"?>
 <scxml xmlns="http://www.w3.org/2005/07/scxml" version="1.0" profile="ecmascript" initial="off">
   <state id="state1" initial="state12">
     <transition event="to_state2" target="state2"/>
-    <state id="state11" initial="state111">
-      <state id="state111">
-        <transition event="to_state12" target="state12"/>
+      <state id="state11" initial="state111">
+        <state id="state111">
+          <transition event="to_state12" target="state12"/>
+        </state>
+        <transition event="to_state111" target="state111"/>
+        <transition event="to_state13" target="state13"/>
       </state>
-      <transition event="to_state111" target="state111"/>
-      <transition event="to_state13" target="state13"/>
-    </state>
-    <state id="state12">
-      <transition event="to_state13" target="state13"/>
-    </state>
-    <state id="state13">
-      <transition event="to_state11" target="state11"/>
+      <state id="state12">
+        <transition event="to_state13" target="state13"/>
+      </state>
+      <state id="state13">
+        <transition event="to_state11" target="state11"/>
+      </state>
     </state>
     <state id="state2"/>
-  </state>
 </scxml>
 EOS
 
@@ -196,7 +194,7 @@ EOS
         
         @message_queue = mock("message_queue" )
         
-        parser = StatemachineParser.new(@messenger, @message_queue)
+        parser = StatemachineParser.new(nil, @messenger, @message_queue)
 
         scxml = <<EOS
 <scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
@@ -261,55 +259,70 @@ EOS
         scxml = <<EOS
 <?xml version="1.0"?>
 <scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
-  <parallel id="parallel">
-    <state id="state1">
-      <state id="state11">
-        <transition event="to_12" cond="In('state22')" target="state12"/>
-      </state>
-      <state id="state12">
-        <transition event="to_11" cond="In('state21')" target="state12"/>
-      </state>
-    </state>
+  <state id="state0">
+    <transition event="to_p" target="parallel"/>
+  </state>
+  <state id="p_super">
+    <transition event="to_0" target="state0"/>
+    <parallel id="parallel">
+        <state id="state1">
+          <state id="state11">
+            <transition event="to_12" cond="In('state22')" target="state12"/>
+          </state>
+          <state id="state12">
+            <transition event="to_11" cond="In('state21')" target="state12"/>
+          </state>
+        </state>
 
-    <state id="state2" initial="state22">
-      <state id="state21">
-       <transition event="to_22" target="state22"/>
-      </state>
-      <state id="state22">
-        <transition event="to_21" target="state21"/>
-      </state>
-    </state>
-  </parallel>
+        <state id="state2" initial="state22">
+          <state id="state21">
+           <transition event="to_22" target="state22"/>
+          </state>
+          <state id="state22">
+            <transition event="to_21" target="state21"/>
+          </state>
+        </state>
+    </parallel>
+  </state>
 </scxml>
 EOS
 
         @sm = parser.build_from_scxml_string scxml
       end
 
-      it "start with two initial states" do
+      it "start with the initial state and transition to the parallel states" do
+        @sm.states_id.should == [:state0]
+        @sm.process_event(:to_p)
         @sm.states_id.should == [:state11,:state22]
       end
 
       it "support transitions for both parallel superstates" do
+        @sm.states_id.should == [:state0]
+        @sm.process_event(:to_p)
         @sm.process_event(:to_12)
         @sm.In(:state12).should == true
-        p "#{@sm.states_id}"
         @sm.process_event(:to_21)
         @sm.In(:state21).should == true
         @sm.states_id.should == [:state12,:state21]
       end
 
       it "support testing with 'in' condition for primitive states " do
-          @sm.process_event(:to_12)
-          @sm.In(:state12).should == true
+        @sm.states_id.should == [:state0]
+        @sm.process_event(:to_p)
+        @sm.process_event(:to_12)
+         @sm.In(:state12).should == true
       end
                
       it "support testing with 'in' condition for  superstates " do
-          @sm.process_event(:to_12)
-          @sm.In(:state1).should == true
+        @sm.states_id.should == [:state0]
+        @sm.process_event(:to_p)
+        @sm.process_event(:to_12)
+        @sm.In(:state1).should == true
       end
 
       it "support testing with 'in' condition for parallel superstates " do
+        @sm.states_id.should == [:state0]
+        @sm.process_event(:to_p)
         @sm.process_event(:to_12)
         @sm.In(:state2).should == true
         @sm.In(:state1).should == true

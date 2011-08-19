@@ -18,7 +18,7 @@ end
 class StatemachineParser < Statemachine::StatemachineBuilder
   include StreamListener
 
-  def initialize(logger = nil, queue = nil)
+  def initialize(context = nil, logger = nil, queue = nil)
     super()
     @actions = Array.new
     @current_transition = nil
@@ -28,12 +28,16 @@ class StatemachineParser < Statemachine::StatemachineBuilder
     @state = Array.new
     @statemachine.messenger = logger
     @statemachine.message_queue = queue
+    @statemachine.context= context
     @substate = Array.new
     @transitions = Array.new
     @history_states = Array.new
     @history_target = Array.new
     @history_state = nil
     @history = false
+    @is_parallel = false
+    @scxml_state = false
+    @parallel_state = Array.new
   end
 
   def build_from_scxml(filename)
@@ -54,6 +58,7 @@ class StatemachineParser < Statemachine::StatemachineBuilder
     case name
       when 'scxml'
         if attributes['name']
+          @scxml_state = true
           state = nil
           @current_state = State.new
           @current_state.id = attributes['name']
@@ -68,8 +73,14 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         end
       when 'parallel'
         @parallel = Statemachine::ParallelStateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
+        @is_parallel = true
+        # If there is a state that encapsulates the parallel state, change it to a superstate
+        if (not @state.empty? and @state.last.is_a? Statemachine::StateBuilder)
+              state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @state.last.subject.superstate, @state.last.subject.statemachine)
+              @state.pop            # pops the old one
+              @state.push(state)    # pushes the new one
+        end
       when 'state'
-        state = nil
         @current_state = State.new
         @current_state.id = attributes['id']
         @current_state.initial = attributes['initial']
@@ -84,12 +95,17 @@ class StatemachineParser < Statemachine::StatemachineBuilder
               state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @state.last.subject.superstate, @state.last.subject.statemachine)
               @state.pop            # pops the old one
               @state.push(state)    # pushes the new one
+              if @is_parallel
+                @parallel_state.pop
+                @parallel_state.push(state)
+              end
             end
             #   @state.last is a superstate => just create the new state using it
             state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @state.last.subject, @statemachine)
           end
         end
         @state.push(state)
+        @parallel_state.push(state) if @is_parallel
       when 'transition'
         @current_transition = Transition.new
         @current_transition.event = attributes['event']
@@ -119,6 +135,7 @@ class StatemachineParser < Statemachine::StatemachineBuilder
     case name
       when 'parallel'
         @statemachine.add_state(@parallel.subject)
+        @is_parallel = false
       when 'state'
         # Adds the superstate's transitions to all its substates
         if (@state.last.is_a? Statemachine::SuperstateBuilder)
@@ -126,11 +143,9 @@ class StatemachineParser < Statemachine::StatemachineBuilder
 
           # Changing the state's id
           if (s.id == @history_state)
-            #@statemachine.remove_state(s)
             s.id = (s.id.to_s + "_H").to_sym
             s.default_history=@history_target.last.to_sym
             @history_target.pop
-            #@statemachine.add_state(s)
           end
 
           # Adds the superstate's transitions to all its substates
@@ -149,8 +164,8 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         # only considering parallel on a root level
 
         @substate.push(@state.last)
-        if @state.size == 1 and @parallel.is_a? Statemachine::ParallelStateBuilder
-          statemachine_aux = Statemachine::Statemachine.new(@state.last.subject)
+        if @parallel_state.size == 1 and @parallel.is_a? Statemachine::ParallelStateBuilder
+          statemachine_aux = Statemachine::Statemachine.new(@parallel_state.last.subject)
           @substate.each do |j|
             statemachine_aux.add_state(j.subject)
             @statemachine.remove_state(j.subject)
@@ -158,7 +173,7 @@ class StatemachineParser < Statemachine::StatemachineBuilder
           statemachine_aux.reset
           @parallel.subject.add_statemachine(statemachine_aux)
         end
-        if @state.size == 1
+        if (@state.size == 1 and not @scxml_state) or (@state.size == 2 and @scxml_state)
           @substate = []
           # TODO make this better. Too inefficient
           while (!(@history_states.size == 0))
@@ -175,6 +190,7 @@ class StatemachineParser < Statemachine::StatemachineBuilder
           end
         end
         @state.pop
+        @parallel_state.pop if @is_parallel
       when 'transition'
         if (@transitions.last.event == nil)
           if @history

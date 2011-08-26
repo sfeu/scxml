@@ -84,23 +84,27 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         @current_state = State.new
         @current_state.id = attributes['id']
         @current_state.initial = attributes['initial']
-        if (@current_state.initial != nil)                    # we already know it is a superstate
-            state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
+        if (@state.empty?)  # It is not a substate
+           if (@current_state.initial != nil) # AND it is a superstate
+             state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
+             state.startstate(@current_state.initial.to_sym)
+           else  # AND it is a state
+             state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
+           end
+        else # It is a substate
+          if (@current_state.initial != nil) # AND it is a superstate
+            state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @state.last.subject, @statemachine)
             state.startstate(@current_state.initial.to_sym)
-        else
-          if (@state.empty?)      # It isn't a sub state
-            state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
-          else                    # this state is a sub state => last state in @state it's its superstate
-            if (@state.last.is_a? Statemachine::StateBuilder)       # if @state.last isn't a superstate, change it to one
+          else # AND it is a subsubstate
+            if (@state.last.is_a? Statemachine::StateBuilder) # but it's parent is not a superstate yet
               state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @state.last.subject.superstate, @state.last.subject.statemachine)
               @state.pop            # pops the old one
               @state.push(state)    # pushes the new one
               if @is_parallel
-                @parallel_state.pop
-                @parallel_state.push(state)
+                 @parallel_state.pop
+                 @parallel_state.push(state)
               end
             end
-            #   @state.last is a superstate => just create the new state using it
             state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @state.last.subject, @statemachine)
           end
         end

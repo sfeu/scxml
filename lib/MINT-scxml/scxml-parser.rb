@@ -124,6 +124,8 @@ class StatemachineParser < Statemachine::StatemachineBuilder
       when 'onexit'
       when 'history'
         @history=true
+        @history_states.push(@state.last.subject.id)
+        @history_state = @state.last.subject.id
       when 'log'
         @actions.push(["log", attributes['expr']])
       when 'send'
@@ -198,8 +200,6 @@ class StatemachineParser < Statemachine::StatemachineBuilder
       when 'transition'
         if (@transitions.last.event == nil)
           if @history
-            @history_states.push(@state.last.subject.id)
-            @history_state = @state.last.subject.id
             @history_target.push(@transitions.last.target)
             @history = false
           else

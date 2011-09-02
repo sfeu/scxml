@@ -63,11 +63,9 @@ class StatemachineParser < Statemachine::StatemachineBuilder
           @current_state = State.new
           @current_state.id = attributes['name']
           @current_state.initial = attributes['initial']
+          state = Statemachine::SuperstateBuilder.new(attributes['name'].to_sym, @subject, @statemachine)
           if (@current_state.initial != nil)
-            state = Statemachine::SuperstateBuilder.new(attributes['name'].to_sym, @subject, @statemachine)
             state.startstate(@current_state.initial.to_sym)
-          else
-            state = Statemachine::StateBuilder.new(attributes['name'].to_sym, @subject, @statemachine)
           end
           @state.push(state)
         end
@@ -143,7 +141,6 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         @statemachine.add_state(@parallel.subject)
         @is_parallel = false
       when 'state'
-        # Adds the superstate's transitions to all its substates
         if (@state.last.is_a? Statemachine::SuperstateBuilder)
           s = statemachine.get_state(@state.last.subject.id)
 
@@ -166,10 +163,9 @@ class StatemachineParser < Statemachine::StatemachineBuilder
             end
           }
         end
-        # In case of parallel statemachines(?) the outmost states will become parallel statemachines
+        # In case of parallel statemachines the outmost states will become parallel statemachines
         # only considering parallel on a root level
 
-        @substate.push(@state.last)
         if @parallel_state.size == 1 and @parallel.is_a? Statemachine::ParallelStateBuilder
           statemachine_aux = Statemachine::Statemachine.new(@parallel_state.last.subject)
           @substate.each do |j|
@@ -179,7 +175,9 @@ class StatemachineParser < Statemachine::StatemachineBuilder
           statemachine_aux.reset
           @parallel.subject.add_statemachine(statemachine_aux)
         end
-        if (@state.size == 1 and not @scxml_state) or (@state.size == 2 and @scxml_state)
+        @substate.push(@state.last)
+
+        if (@state.size == 1 and not @scxml_state) or (@state.size == 2 and @scxml_state) or (@parallel_state.size == 1)
           @substate = []
           # TODO make this better. Too inefficient
           while (!(@history_states.size == 0))

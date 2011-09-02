@@ -329,8 +329,6 @@ EOS
       end
   end
 
-  # TODO create tests for history states
-=begin
   describe 'with history' do
       before (:each) do
 
@@ -339,12 +337,58 @@ EOS
         scxml = <<EOS
 <?xml version="1.0"?>
 <scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
+  <state id="state0">
+    <transition event="to_p" target="parallel"/>
+  </state>
+  <state id="p_super">
+    <transition event="to_0" target="state0"/>
+    <parallel id="parallel">
+        <state id="state1">
+          <state id="state11">
+            <transition event="to_12" cond="In('state22')" target="state12"/>
+          </state>
+          <state id="state12">
+            <transition event="to_11" cond="In('state21')" target="state12"/>
+          </state>
+          <history id="history" type="deep">
+            <transition target="state11"/>
+          </history>
+        </state>
+
+        <state id="state2" initial="state22">
+          <state id="state21">
+           <transition event="to_22" target="state22"/>
+          </state>
+          <state id="state22">
+            <transition event="to_21" target="state21"/>
+          </state>
+        </state>
+    </parallel>
+  </state>
 </scxml>
 EOS
 
         @sm = parser.build_from_scxml_string scxml
       end
-   end
-=end
+
+      it "start with the initial state and transition to the parallel states" do
+        @sm.states_id.should == [:state0]
+        @sm.process_event(:to_p)
+        @sm.states_id.should == [:state11,:state22]
+      end
+
+      it "should leave the parallel states and return in the correct states" do
+        @sm.states_id.should == [:state0]
+        @sm.process_event(:to_p)
+        @sm.states_id.should == [:state11,:state22]
+        @sm.process_event(:to_12)
+        @sm.states_id.should == [:state12,:state22]
+        @sm.process_event(:to_0)
+        @sm.states_id.should == [:state0]
+        @sm.process_event(:to_p)
+        @sm.states_id.should == [:state12,:state22]
+      end
+  end
   end
 end
+

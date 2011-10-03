@@ -5,6 +5,7 @@ require 'statemachine'
 require 'rexml/document'
 require 'rexml/streamlistener'
 
+
 class State
   attr_accessor :id, :initial
 end

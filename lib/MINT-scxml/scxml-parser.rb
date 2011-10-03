@@ -5,8 +5,6 @@ require 'statemachine'
 require 'rexml/document'
 require 'rexml/streamlistener'
 
-include REXML
-
 class State
   attr_accessor :id, :initial
 end
@@ -16,6 +14,7 @@ class Transition
 end
 
 class StatemachineParser < Statemachine::StatemachineBuilder
+  include REXML
   include StreamListener
 
   def initialize(context = nil, logger = nil, queue = nil)

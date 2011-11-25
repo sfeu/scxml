@@ -70,40 +70,53 @@ class StatemachineParser < Statemachine::StatemachineBuilder
           @state.push(state)
         end
       when 'parallel'
-        @parallel = Statemachine::ParallelStateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
         @is_parallel = true
         # If there is a state that encapsulates the parallel state, change it to a superstate
         if (not @state.empty? and @state.last.is_a? Statemachine::StateBuilder)
-              state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @state.last.subject.superstate, @state.last.subject.statemachine)
-              @state.pop            # pops the old one
-              @state.push(state)    # pushes the new one
+          state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @state.last.subject.superstate, @state.last.subject.statemachine)
+          @state.pop            # pops the old one
+          @state.push(state)    # pushes the new one
         end
+        @parallel = Statemachine::ParallelStateBuilder.new(attributes['id'].to_sym, @state.last.subject, @statemachine)
       when 'state'
         @current_state = State.new
         @current_state.id = attributes['id']
         @current_state.initial = attributes['initial']
-        if (@state.empty?)  # It is not a substate
-           if (@current_state.initial != nil) # AND it is a superstate
-             state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
-             state.startstate(@current_state.initial.to_sym)
-           else  # AND it is a state
-             state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
-           end
-        else # It is a substate
-          if (@current_state.initial != nil) # AND it is a superstate
-            state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @state.last.subject, @statemachine)
-            state.startstate(@current_state.initial.to_sym)
-          else # AND it is a subsubstate
-            if (@state.last.is_a? Statemachine::StateBuilder) # but it's parent is not a superstate yet
-              state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @state.last.subject.superstate, @state.last.subject.statemachine)
-              @state.pop            # pops the old one
-              @state.push(state)    # pushes the new one
-              if @is_parallel
-                 @parallel_state.pop
-                 @parallel_state.push(state)
+        if @is_parallel
+          if (@parallel_state.empty?)
+            #This state is one of the parallel statemachines' superstate
+            # TODO What if the parallel statemachine doesn't have a superstate?
+            # I think it should be defined that it should always have
+            state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @parallel.subject, @statemachine)
+            state.startstate(@current_state.initial.to_sym) if @current_state.initial
+          else
+            #This state is a substate inside a parallel statemachine
+            state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @parallel_state.last.subject, @statemachine)
+          end
+        else
+          if (@state.empty?)  # It is not a substate
+             if (@current_state.initial != nil) # AND it is a superstate
+               state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
+               state.startstate(@current_state.initial.to_sym)
+             else  # AND it is a state
+               state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
+             end
+          else # It is a substate
+            if (@current_state.initial != nil) # AND it is a superstate
+              state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @state.last.subject, @statemachine)
+              state.startstate(@current_state.initial.to_sym)
+            else # AND it is a subsubstate
+              if (@state.last.is_a? Statemachine::StateBuilder) # but it's parent is not a superstate yet
+                state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @state.last.subject.superstate, @state.last.subject.statemachine)
+                @state.pop            # pops the old one
+                @state.push(state)    # pushes the new one
+                if @is_parallel
+                   @parallel_state.pop
+                   @parallel_state.push(state)
+                end
               end
+              state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @state.last.subject, @statemachine)
             end
-            state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @state.last.subject, @statemachine)
           end
         end
         @state.push(state)
@@ -142,19 +155,22 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         @is_parallel = false
       when 'state'
         if (@state.last.is_a? Statemachine::SuperstateBuilder)
-          s = statemachine.get_state(@state.last.subject.id)
+          s = @statemachine.get_state(@state.last.subject.id)
 
           # Changing the state's id
           if (s.id == @history_state)
+            @statemachine.remove_state(s)
             s.id = (s.id.to_s + "_H").to_sym
+            s.superstate.startstate_id = s.id
             s.default_history=@history_target.last.to_sym
+            @statemachine.add_state(s)
             @history_target.pop
           end
 
           # Adds the superstate's transitions to all its substates
           @substate.each{|j|
             if (s)
-              s1 = statemachine.get_state(j.subject.id)
+              s1 = @statemachine.get_state(j.subject.id)
               s.transitions.each {|v,k|
                 if (s1)
                   s1.add(k)
@@ -163,19 +179,19 @@ class StatemachineParser < Statemachine::StatemachineBuilder
             end
           }
         end
+
+        @substate.push(@state.last)
+
         # In case of parallel statemachines the outmost states will become parallel statemachines
         # only considering parallel on a root level
-
         if @parallel_state.size == 1 and @parallel.is_a? Statemachine::ParallelStateBuilder
-          statemachine_aux = Statemachine::Statemachine.new(@parallel_state.last.subject)
+          statemachine_aux = Statemachine::Statemachine.new(@parallel.subject)
           @substate.each do |j|
             statemachine_aux.add_state(j.subject)
             @statemachine.remove_state(j.subject)
           end
-          statemachine_aux.reset
           @parallel.subject.add_statemachine(statemachine_aux)
         end
-        @substate.push(@state.last)
 
         if (@state.size == 1 and not @scxml_state) or (@state.size == 2 and @scxml_state) or (@parallel_state.size == 1)
           @substate = []

@@ -166,18 +166,6 @@ class StatemachineParser < Statemachine::StatemachineBuilder
             @statemachine.add_state(s)
             @history_target.pop
           end
-
-          # Adds the superstate's transitions to all its substates
-          @substate.each{|j|
-            if (s)
-              s1 = @statemachine.get_state(j.subject.id)
-              s.transitions.each {|v,k|
-                if (s1)
-                  s1.add(k)
-                end
-              }
-            end
-          }
         end
 
         @substate.push(@state.last)

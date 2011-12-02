@@ -59,9 +59,8 @@ class StatemachineParser < Statemachine::StatemachineBuilder
       when 'scxml'
         if attributes['name']
           @scxml_state = true
-          state = nil
           @current_state = State.new
-          @current_state.id = attributes['name']
+          @current_state.id = attributes['id']
           @current_state.initial = attributes['initial']
           state = Statemachine::SuperstateBuilder.new(attributes['name'].to_sym, @subject, @statemachine)
           if (@current_state.initial != nil)
@@ -124,7 +123,11 @@ class StatemachineParser < Statemachine::StatemachineBuilder
       when 'transition'
         @current_transition = Transition.new
         @current_transition.event = attributes['event']
-        @current_transition.target = attributes['target']
+        if attributes['target'] == @history_state.to_s and @history_state
+          @current_transition.target = attributes['target']+"_H"
+        else
+           @current_transition.target = attributes['target']
+        end
         if attributes['cond']
           @current_transition.cond = attributes['cond']
         else
@@ -157,14 +160,11 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         if (@state.last.is_a? Statemachine::SuperstateBuilder)
           s = @statemachine.get_state(@state.last.subject.id)
 
-          # Changing the state's id
           if (s.id == @history_state)
-            @statemachine.remove_state(s)
-            s.id = (s.id.to_s + "_H").to_sym
-            s.superstate.startstate_id = s.id
-            s.default_history=@history_target.last.to_sym
-            @statemachine.add_state(s)
+            if @history_target.last
+            s.default_history = @history_target.last.to_sym
             @history_target.pop
+            end
           end
         end
 

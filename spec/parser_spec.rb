@@ -6,11 +6,11 @@ describe 'The StatemachineParser for' do
     describe 'without a superstate' do
       before (:each) do
         @messenger = mock("messenger" )
-        
+
         parser = StatemachineParser.new(nil,@messenger)
 
         scxml = <<EOS
-<scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
+<scxml name="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
   <state id="state1">
      <transition event="event1" target="state2"/>
      <transition event="event4" target="state2">
@@ -49,16 +49,16 @@ EOS
         @sm.event4
       end
     end
-    
+
     describe "in the same superstate" do
       before (:each) do
         @messenger = mock("messenger" )
-        
+
         parser = StatemachineParser.new(nil,@messenger)
 
         scxml = <<EOS
 <?xml version="1.0"?>
-<scxml xmlns="http://www.w3.org/2005/07/scxml" version="1.0" profile="ecmascript" initial="off">
+<scxml xmlns="http://www.w3.org/2005/07/scxml" version="1.0" profile="ecmascript">
   <state id="super" initial="child2">
     <state id="child1">
       <transition event="event1" target="child2">
@@ -80,7 +80,7 @@ EOS
 EOS
         @sm = parser.build_from_scxml_string scxml
       end
-      
+
       it "should start with the correct state" do
         @sm.state.should==:child2
       end
@@ -102,7 +102,7 @@ EOS
       it 'should start with the correct state even if the initial state has not been explicitly set' do
         scxml = <<EOS
 <?xml version="1.0"?>
-<scxml xmlns="http://www.w3.org/2005/07/scxml" version="1.0" profile="ecmascript" initial="off">
+<scxml xmlns="http://www.w3.org/2005/07/scxml" version="1.0" profile="ecmascript">
   <state id="state">
     <state id="state1">
       <transition event="event1" target="state2">
@@ -120,8 +120,8 @@ EOS
         parser = StatemachineParser.new
         @sm = parser.build_from_scxml_string scxml
         @sm.state.should==:state1
-        
-      end 
+
+      end
     end
     describe "in double nested superstates" do
       before (:each) do
@@ -129,7 +129,7 @@ EOS
         parser = StatemachineParser.new
         scxml = <<EOS
 <?xml version="1.0"?>
-<scxml xmlns="http://www.w3.org/2005/07/scxml" version="1.0" profile="ecmascript" initial="off">
+<scxml xmlns="http://www.w3.org/2005/07/scxml" version="1.0" profile="ecmascript">
   <state id="state1" initial="state12">
     <transition event="to_state2" target="state2"/>
       <state id="state11" initial="state111">
@@ -152,7 +152,7 @@ EOS
 
         @sm = parser.build_from_scxml_string scxml
       end
-      
+
       it "should support starting with the correct inital state that has been excplicitely set" do
         @sm.state.should==:state12
         @sm.to_state13
@@ -186,18 +186,18 @@ EOS
         @sm.state.should==:state2
       end
     end
-    
+
     describe 'with onentry or onexit' do
 
       before (:each) do
         @messenger = mock("messenger" )
-        
+
         @message_queue = mock("message_queue" )
-        
+
         parser = StatemachineParser.new(nil, @messenger, @message_queue)
 
         scxml = <<EOS
-<scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
+<scxml name="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
   <state id="state1">
         <transition event="to_state2" target="state2"/>
   </state>
@@ -258,7 +258,7 @@ EOS
 
         scxml = <<EOS
 <?xml version="1.0"?>
-<scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
+<scxml name="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
   <state id="state0">
     <transition event="to_p" target="parallel"/>
   </state>
@@ -312,7 +312,7 @@ EOS
         @sm.process_event(:to_12)
         @sm.In(:state12).should == true
       end
-               
+
       it "support testing with 'in' condition for  superstates " do
         @sm.states_id.should == [:state0]
         @sm.process_event(:to_p)
@@ -338,22 +338,120 @@ EOS
       end
   end
 
-  # TODO create tests for history states
-=begin
-  describe 'with history' do
-      before (:each) do
-
-        parser = StatemachineParser.new
+  describe "History States with default history state" do
+    before(:each) do
+      parser = StatemachineParser.new
 
         scxml = <<EOS
-<?xml version="1.0"?>
-<scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
+<scxml id="SCXML" initial="state1" name="history" xmlns="http://www.w3.org/2005/07/scxml"><!--   node-size-and-position x=0.0 y=0.0 w=280.0 h=250.0  -->
+ <state id="state1"><!--   node-size-and-position x=10.0 y=30.0 w=100.0 h=30.0  -->
+  <transition event="to_3" target="state3"></transition>
+ </state>
+ <state id="state3" initial="state3_1"><!--   node-size-and-position x=140.0 y=30.0 w=130.0 h=200.0  -->
+  <transition event="to_1" target="state1"></transition>
+  <state id="state3_1"><!--   node-size-and-position x=20.0 y=40.0 w=100.0 h=30.0  -->
+   <transition event="to_3_2" target="state3_2"></transition>
+  </state>
+  <state id="state3_2"><!--   node-size-and-position x=20.0 y=150.0 w=100.0 h=30.0  -->
+   <transition event="to_3_1" target="state3_1"><!--   edge-path [state3_1]  x=110.0 y=110.0  --></transition>
+  </state>
+  <history id="H" type="deep"><!--   node-size-and-position x=10.0 y=110.0 w=40.0 h=30.0  -->
+   <transition target="state3_2"></transition>
+  </history>
+ </state>
 </scxml>
 EOS
 
-        @sm = parser.build_from_scxml_string scxml
-      end
-   end
-=end
+      @sm = parser.build_from_scxml_string scxml
+    end
+
+
+    it "default history" do
+      @sm.process_event(:to_3)
+      @sm.state.should eql(:state3_2)
+    end
+
+    it "reseting the statemachine resets history" do
+      @sm.process_event(:to_3)
+      @sm.process_event(:to_3_1)
+      @sm.process_event(:to_1)
+      @sm.get_state(:state3).history_id.should eql(:state3_1)
+
+      @sm.reset
+      @sm.get_state(:state3).history_id.should eql(:state3_2)
+    end
+  end
+
+  describe "History States without default history state" do
+    before(:each) do
+      parser = StatemachineParser.new
+
+        scxml = <<EOS
+<scxml id="SCXML" initial="state1" name="history" xmlns="http://www.w3.org/2005/07/scxml"><!--   node-size-and-position x=0.0 y=0.0 w=280.0 h=250.0  -->
+ <state id="state1"><!--   node-size-and-position x=10.0 y=30.0 w=100.0 h=30.0  -->
+  <transition event="to_3" target="state3"></transition>
+ </state>
+ <state id="state3" initial="state3_1"><!--   node-size-and-position x=140.0 y=30.0 w=130.0 h=200.0  -->
+  <transition event="to_1" target="state1"></transition>
+  <state id="state3_1"><!--   node-size-and-position x=20.0 y=40.0 w=100.0 h=30.0  -->
+   <transition event="to_3_2" target="state3_2"></transition>
+  </state>
+  <state id="state3_2"><!--   node-size-and-position x=20.0 y=150.0 w=100.0 h=30.0  -->
+   <transition event="to_3_1" target="state3_1"><!--   edge-path [state3_1]  x=110.0 y=110.0  --></transition>
+  </state>
+  <history id="H" type="deep"><!--   node-size-and-position x=10.0 y=110.0 w=40.0 h=30.0  -->
+  </history>
+ </state>
+</scxml>
+EOS
+
+      @sm = parser.build_from_scxml_string scxml
+    end
+
+
+    it "reseting the statemachine resets history" do
+      @sm.process_event(:to_3)
+      @sm.process_event(:to_1)
+      @sm.get_state(:state3).history_id.should eql(:state3_1)
+
+      @sm.reset
+      @sm.get_state(:state3).history_id.should eql(nil)
+    end
+  end
+
+  describe "Nested Superstates" do
+    before(:each) do
+      parser = StatemachineParser.new
+
+        scxml = <<EOS
+<scxml id="SCXML" initial="grandpa" name="history" xmlns="http://www.w3.org/2005/07/scxml"><!--   node-size-and-position x=0.0 y=0.0 w=250.0 h=270.0  -->
+ <state id="grandpa" initial="start"><!--   node-size-and-position x=10.0 y=30.0 w=230.0 h=110.0  -->
+  <transition event="sister" target="great_auntie"></transition>
+  <state id="papa" initial="son"><!--   node-size-and-position x=10.0 y=30.0 w=150.0 h=70.0  -->
+   <state id="daughter"><!--   node-size-and-position x=70.0 y=30.0 w=70.0 h=30.0  --></state>
+   <state id="son"><!--   node-size-and-position x=10.0 y=30.0 w=50.0 h=30.0  --></state>
+  </state>
+  <state id="start"><!--   node-size-and-position x=170.0 y=30.0 w=50.0 h=30.0  -->
+   <transition event="go" target="daughter"></transition>
+  </state>
+  <history id="H" type="deep"><!--   node-size-and-position x=180.0 y=70.0 w=30.0 h=30.0  --></history>
+ </state>
+ <state id="great_auntie"><!--   node-size-and-position x=100.0 y=230.0 w=100.0 h=30.0  -->
+  <transition event="foo" target="grandpa"><!--   edge-path [grandpa]  x=200.0 y=200.0  --></transition>
+ </state>
+</scxml>
+EOS
+
+      @sm = parser.build_from_scxml_string scxml
+ end
+
+    it "should use history of sub superstates when transitioning itto it's own history" do
+      @sm.go
+      @sm.sister
+      @sm.foo
+
+      @sm.state.should eql(:daughter)
+    end
+  end
   end
 end

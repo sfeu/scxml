@@ -20,60 +20,91 @@ class StatemachineParser < Statemachine::StatemachineBuilder
 
   def initialize(context = nil, logger = nil, queue = nil)
     super()
-    @actions = Array.new
     @current_transition = nil
     @current_state = nil
     @current_element = nil
     @parallel = nil
-    @state = Array.new
+    @history_state = nil
     @statemachine.messenger = logger
     @statemachine.message_queue = queue
     @statemachine.context= context
+    @actions = Array.new
+    @actions_aux = Array.new
+    @state = Array.new
     @substate = Array.new
     @transitions = Array.new
     @history_states = Array.new
     @history_target = Array.new
-    @history_state = nil
+    @parallel_state = Array.new
+    @if_actions = Array.new
+    @if_actions_aux = Array.new
+    @if = Array.new
+    @tag = Array.new
+    @cond = Array.new
     @history = false
     @is_parallel = false
     @scxml_state = false
-    @parallel_state = Array.new
   end
 
+  # This function parses scxml from a file
   def build_from_scxml(filename)
     source = File.new filename
     Document.parse_stream(source, self)
     @statemachine.reset
-	return @statemachine
+	  @statemachine
   end
 
-  # parses scxml directly from string parameter stringbuffer
+  # This function parses scxml directly from the string parameter "stringbuffer"
   def build_from_scxml_string(stringbuffer)
     Document.parse_stream(stringbuffer, self)
     @statemachine.reset
-    return @statemachine
+    @statemachine
   end
 
+
+  # This function deals with the different scenarios for the creation of actions with if
+  def creating_ifs
+    if @if.size == 1
+      @if_actions.push(@if_actions_aux.last) if @if_actions_aux.size != 0
+      if @actions_aux.size != 0
+        @if_actions.push(@actions_aux)
+        @actions_aux = []
+      end
+      @actions.push([@tag.last, @cond.last, @if_actions])
+    else
+      @if_actions_aux.push(@if_actions) if @if_actions.size != 0
+      @actions_aux.push([@tag.last, @cond.last, @if_actions_aux.last])
+    end
+    @if_actions = []
+    @cond.pop
+    @tag.pop
+    @if_actions_aux.pop if @if_actions_aux.size != 0
+  end
+
+  # This function defines the actions to be taken for each different tag when the tag is opened
   def tag_start(name, attributes)
     case name
       when 'scxml'
+        # If the initial tag <scxml> has a name attribute, define it as the most outer super state
         if attributes['name']
-          @scxml_state = true
           state = nil
+          @scxml_state = true
           @current_state = State.new
           @current_state.id = attributes['name']
           @current_state.initial = attributes['initial']
           state = Statemachine::SuperstateBuilder.new(attributes['name'].to_sym, @subject, @statemachine)
-          if (@current_state.initial != nil)
+          # If the current state has an initial state defined, add it to the state created.
+          if @current_state.initial != nil
             state.startstate(@current_state.initial.to_sym)
           end
+          # Adds it to a list of "open" states
           @state.push(state)
         end
       when 'parallel'
         @parallel = Statemachine::ParallelStateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
         @is_parallel = true
         # If there is a state that encapsulates the parallel state, change it to a superstate
-        if (not @state.empty? and @state.last.is_a? Statemachine::StateBuilder)
+        if not @state.empty? and @state.last.is_a? Statemachine::StateBuilder
               state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @state.last.subject.superstate, @state.last.subject.statemachine)
               @state.pop            # pops the old one
               @state.push(state)    # pushes the new one
@@ -82,19 +113,26 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         @current_state = State.new
         @current_state.id = attributes['id']
         @current_state.initial = attributes['initial']
-        if (@state.empty?)  # It is not a substate
-           if (@current_state.initial != nil) # AND it is a superstate
+        if @state.empty?
+           # It is not a substate
+           if @current_state.initial != nil
+             # and it is a superstate
              state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
              state.startstate(@current_state.initial.to_sym)
-           else  # AND it is a state
+           else
+             # and it is a state
              state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
            end
-        else # It is a substate
-          if (@current_state.initial != nil) # AND it is a superstate
+        else
+          # It is a substate
+          if @current_state.initial != nil
+            # and it is a superstate
             state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @state.last.subject, @statemachine)
             state.startstate(@current_state.initial.to_sym)
-          else # AND it is a subsubstate
-            if (@state.last.is_a? Statemachine::StateBuilder) # but it's parent is not a superstate yet
+          else
+            # and it is a state
+            if @state.last.is_a? Statemachine::StateBuilder
+              # Its parent is not a superstate yet
               state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @state.last.subject.superstate, @state.last.subject.statemachine)
               @state.pop            # pops the old one
               @state.push(state)    # pushes the new one
@@ -121,51 +159,78 @@ class StatemachineParser < Statemachine::StatemachineBuilder
       when 'onentry'
       when 'onexit'
       when 'history'
-        @history=true
+        @history = true
         @history_states.push(@state.last.subject.id)
         @history_state = @state.last.subject.id
+      when 'if'
+        @if.push(true)
+        if @if.size >= 1
+          @if_actions_aux.push(@if_actions) if @if_actions.size != 0
+          @if_actions = []
+        end
+        @cond.push(attributes['cond'])
+        @tag.push("if")
+      when 'elseif'
+        creating_ifs
+        @cond.push(attributes['cond'])
+        @tag.push("elseif")
+      when 'else'
+        creating_ifs
+        @cond.push(true)
+        @tag.push("else")
       when 'log'
-        @actions.push(["log", attributes['expr']])
+        if @if.last
+          @if_actions.push(["log", attributes['expr']])
+        else
+          @actions.push(["log", attributes['expr']])
+        end
       when 'send'
-        @actions.push(["send", attributes['target'], attributes['event']])
+        if @if.last
+          @if_actions.push(["send", attributes['target'], attributes['event']])
+        else
+          @actions.push(["send", attributes['target'], attributes['event']])
+        end
       when 'invoke'
-        @actions.push(["invoke", attributes['src'].to_sym])
+        if @if.last
+          @if_actions.push(["invoke", attributes['src'].to_sym])
+        else
+          @actions.push(["invoke", attributes['src'].to_sym])
+        end
       else
         @current_element = name
       end
   end
 
+  # This function defines the actions to be taken for each different tag when the tag is closed
   def tag_end(name)
     case name
       when 'parallel'
         @statemachine.add_state(@parallel.subject)
         @is_parallel = false
       when 'state'
-        if (@state.last.is_a? Statemachine::SuperstateBuilder)
+        if @state.last.is_a? Statemachine::SuperstateBuilder
           s = statemachine.get_state(@state.last.subject.id)
 
-          # Changing the state's id
-          if (s.id == @history_state)
+          if s.id == @history_state
+            # Changing the state's id
             s.id = (s.id.to_s + "_H").to_sym
-            s.default_history=@history_target.last.to_sym
+            s.default_history = @history_target.last.to_sym
             @history_target.pop
           end
 
-          # Adds the superstate's transitions to all its substates
-          @substate.each{|j|
-            if (s)
+          # Every state belonging to this superstate should respond to the superstate's transitions
+          @substate.each do |j|
+            if s
               s1 = statemachine.get_state(j.subject.id)
-              s.transitions.each {|v,k|
-                if (s1)
-                  s1.add(k)
-                end
-              }
+              s.transitions.each do |v,k|
+                s1.add(k) if s1
+              end
             end
-          }
+          end
         end
+
         # In case of parallel statemachines the outmost states will become parallel statemachines
         # only considering parallel on a root level
-
         if @parallel_state.size == 1 and @parallel.is_a? Statemachine::ParallelStateBuilder
           statemachine_aux = Statemachine::Statemachine.new(@parallel_state.last.subject)
           @substate.each do |j|
@@ -175,17 +240,18 @@ class StatemachineParser < Statemachine::StatemachineBuilder
           statemachine_aux.reset
           @parallel.subject.add_statemachine(statemachine_aux)
         end
+
         @substate.push(@state.last)
 
         if (@state.size == 1 and not @scxml_state) or (@state.size == 2 and @scxml_state) or (@parallel_state.size == 1)
           @substate = []
           # TODO make this better. Too inefficient
-          while (!(@history_states.size == 0))
+          while @history_states.size != 0
             # change every transitions where @history_states.last was the target state to history_states.last+"_H"
             # for every history state
             @statemachine.states.each_value do |s|
                s.transitions.each_value do |t|
-                 if (t.destination_id == @history_states.last)
+                 if t.destination_id == @history_states.last
                    t.destination_id = (t.destination_id.to_s + "_H").to_s
                  end
                end
@@ -196,7 +262,7 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         @state.pop
         @parallel_state.pop if @is_parallel
       when 'transition'
-        if (@transitions.last.event == nil)
+        if @transitions.last.event == nil
           if @history
             @history_target.push(@transitions.last.target)
             @history = false
@@ -204,9 +270,10 @@ class StatemachineParser < Statemachine::StatemachineBuilder
             # TODO spontaneous transitions
           end
         else
-          if (@transitions.last.target != nil)     # if it has a target state
+          if @transitions.last.target != nil
             @state.last.event(@transitions.last.event.to_sym, @transitions.last.target.to_sym, @actions, @transitions.last.cond)
-          else                                     # it is its own target state
+          else
+            # if it doesn't have a target state, it is its own target state
             @state.last.event(@transitions.last.event.to_sym, @state.last.subject.id.to_sym, @actions, @transitions.last.cond)
           end
         end
@@ -220,6 +287,11 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         @actions=[]
       when 'history'
         @history = false
+      when 'if'
+        creating_ifs
+        @if.pop
+      else
+
     end
   end
 

@@ -67,12 +67,16 @@ class StatemachineParser < Statemachine::StatemachineBuilder
     if @if.size == 1
       @if_actions.push(@if_actions_aux.last) if @if_actions_aux.size != 0
       if @actions_aux.size != 0
-        @if_actions.push(@actions_aux)
+        @actions_aux.each do |j|
+          @if_actions.push(j)
+        end
         @actions_aux = []
       end
       @actions.push([@tag.last, @cond.last, @if_actions])
     else
-      @if_actions_aux.push(@if_actions) if @if_actions.size != 0
+      if @if_actions.size != 0
+        @if_actions_aux.push(@if_actions)
+      end
       @actions_aux.push([@tag.last, @cond.last, @if_actions_aux.last])
     end
     @if_actions = []
@@ -85,7 +89,7 @@ class StatemachineParser < Statemachine::StatemachineBuilder
   def tag_start(name, attributes)
     case name
       when 'scxml'
-        # If the initial tag <scxml> has a name attribute, define it as the most outer super state
+        # If the initial tag <scxml> has a n  ame attribute, define it as the most outer super state
         if attributes['name']
           state = nil
           @scxml_state = true

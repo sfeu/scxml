@@ -200,6 +200,9 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         else
           @actions.push(["invoke", attributes['src'].to_sym])
         end
+      when 'script'
+        @script = true
+        @script_code = ""
       else
         @current_element = name
       end
@@ -294,8 +297,21 @@ class StatemachineParser < Statemachine::StatemachineBuilder
       when 'if'
         creating_ifs
         @if.pop
+      when 'script'
+        @script = false
+        if @if.last
+          @if_actions.push(["script", @script_code])
+        else
+          @actions.push(["script", @script_code])
+        end
       else
 
+    end
+  end
+
+  def text(text)
+    if @script
+      @script_code += text
     end
   end
 

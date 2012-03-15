@@ -250,6 +250,46 @@ EOS
         @sm.to_state1
       end
     end
+
+    describe 'with spontaneous transitions' do
+      before (:each) do
+        @log = ""
+        parser = StatemachineParser.new(nil,nil)
+        scxml = <<EOS
+<scxml id="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
+  <state id="off">
+     <onentry>
+       <script>Proc.new {puts "entering off"}</script>
+     </onentry>
+     <onexit>
+       <script>Proc.new {puts "exiting off"}</script>
+     </onexit>
+     <transition event="toggle" target="on">
+       <script>@log += "on"</script>
+     </transition>
+     <transition target="done" cond="@log == 'onoff'"/>
+  </state>
+
+  <state id="on">
+     <transition event="toggle" target="off">
+       <script>@log += "off"</script>
+     </transition>
+  </state>
+</scxml>
+EOS
+
+        @sm = parser.build_from_scxml_string scxml
+        @sm.context = self
+      end
+
+      it "should be done" do
+        @sm.toggle
+        @sm.state.should == :on
+        @sm.toggle
+        @sm.state.should == :done
+      end
+    end
+
   end
 
   describe 'parallel' do

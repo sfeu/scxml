@@ -152,8 +152,12 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         @parallel_state.push(state) if @is_parallel
       when 'transition'
         @current_transition = Transition.new
-        @current_transition.event = attributes['event']
         @current_transition.target = attributes['target']
+        if attributes['event']
+          @current_transition.event = attributes['event']
+        else
+          @current_transition.event = nil
+        end
         if attributes['cond']
           @current_transition.cond = attributes['cond']
         else
@@ -274,7 +278,7 @@ class StatemachineParser < Statemachine::StatemachineBuilder
             @history_target.push(@transitions.last.target)
             @history = false
           else
-            # TODO spontaneous transitions
+            @state.last.event(nil, @transitions.last.target.to_sym, @actions, @transitions.last.cond)
           end
         else
           if @transitions.last.target != nil

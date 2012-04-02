@@ -91,10 +91,9 @@ class StatemachineParser < Statemachine::StatemachineBuilder
       when 'scxml'
         # If the initial tag <scxml> has a n  ame attribute, define it as the most outer super state
         if attributes['name']
-          state = nil
           @scxml_state = true
           @current_state = State.new
-          @current_state.id = attributes['name']
+          @current_state.id = attributes['id']
           @current_state.initial = attributes['initial']
           state = Statemachine::SuperstateBuilder.new(attributes['name'].to_sym, @subject, @statemachine)
           # If the current state has an initial state defined, add it to the state created.
@@ -152,7 +151,11 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         @parallel_state.push(state) if @is_parallel
       when 'transition'
         @current_transition = Transition.new
-        @current_transition.target = attributes['target']
+        if attributes['target'] == @history_state.to_s and @history_state
+          @current_transition.target = attributes['target']+"_H"
+        else
+          @current_transition.target = attributes['target']
+        end
         if attributes['event']
           @current_transition.event = attributes['event']
         else
@@ -222,11 +225,11 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         if @state.last.is_a? Statemachine::SuperstateBuilder
           s = statemachine.get_state(@state.last.subject.id)
 
-          if s.id == @history_state
-            # Changing the state's id
-            s.id = (s.id.to_s + "_H").to_sym
-            s.default_history = @history_target.last.to_sym
-            @history_target.pop
+          if (s.id == @history_state)
+            if @history_target.last
+              s.default_history = @history_target.last.to_sym
+              @history_target.pop
+            end
           end
 
           # Every state belonging to this superstate should respond to the superstate's transitions

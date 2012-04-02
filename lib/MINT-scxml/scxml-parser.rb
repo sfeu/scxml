@@ -51,7 +51,7 @@ class StatemachineParser < Statemachine::StatemachineBuilder
     source = File.new filename
     Document.parse_stream(source, self)
     @statemachine.reset
-	  @statemachine
+    @statemachine
   end
 
   # This function parses scxml directly from the string parameter "stringbuffer"
@@ -108,24 +108,24 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         @is_parallel = true
         # If there is a state that encapsulates the parallel state, change it to a superstate
         if not @state.empty? and @state.last.is_a? Statemachine::StateBuilder
-              state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @state.last.subject.superstate, @state.last.subject.statemachine)
-              @state.pop            # pops the old one
-              @state.push(state)    # pushes the new one
+          state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @state.last.subject.superstate, @state.last.subject.statemachine)
+          @state.pop            # pops the old one
+          @state.push(state)    # pushes the new one
         end
       when 'state'
         @current_state = State.new
         @current_state.id = attributes['id']
         @current_state.initial = attributes['initial']
         if @state.empty?
-           # It is not a substate
-           if @current_state.initial != nil
-             # and it is a superstate
-             state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
-             state.startstate(@current_state.initial.to_sym)
-           else
-             # and it is a state
-             state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
-           end
+          # It is not a substate
+          if @current_state.initial != nil
+            # and it is a superstate
+            state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
+            state.startstate(@current_state.initial.to_sym)
+          else
+            # and it is a state
+            state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
+          end
         else
           # It is a substate
           if @current_state.initial != nil
@@ -140,8 +140,8 @@ class StatemachineParser < Statemachine::StatemachineBuilder
               @state.pop            # pops the old one
               @state.push(state)    # pushes the new one
               if @is_parallel
-                 @parallel_state.pop
-                 @parallel_state.push(state)
+                @parallel_state.pop
+                @parallel_state.push(state)
               end
             end
             state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @state.last.subject, @statemachine)
@@ -212,7 +212,7 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         @script_code = ""
       else
         @current_element = name
-      end
+    end
   end
 
   # This function defines the actions to be taken for each different tag when the tag is closed
@@ -255,6 +255,7 @@ class StatemachineParser < Statemachine::StatemachineBuilder
           @parallel.subject.add_statemachine(statemachine_aux)
         end
 
+
         @substate.push(@state.last)
 
         if (@state.size == 1 and not @scxml_state) or (@state.size == 2 and @scxml_state) or (@parallel_state.size == 1)
@@ -264,11 +265,11 @@ class StatemachineParser < Statemachine::StatemachineBuilder
             # change every transitions where @history_states.last was the target state to history_states.last+"_H"
             # for every history state
             @statemachine.states.each_value do |s|
-               s.transitions.each_value do |t|
-                 if t.destination_id == @history_states.last
-                   t.destination_id = (t.destination_id.to_s + "_H").to_s
-                 end
-               end
+              s.transitions.each_value do |t|
+                if t.destination_id == @history_states.last
+                  t.destination_id = (t.destination_id.to_s + "_H").to_s
+                end
+              end
             end
             @history_states.pop
           end

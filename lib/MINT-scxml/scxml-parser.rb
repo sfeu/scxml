@@ -1,4 +1,3 @@
-# -*- coding: raw-text -*-
 require 'rubygems'
 require "bundler/setup"
 require 'statemachine'
@@ -50,14 +49,14 @@ class StatemachineParser < Statemachine::StatemachineBuilder
   def build_from_scxml(filename)
     source = File.new filename
     Document.parse_stream(source, self)
-    @statemachine.reset
+    #@statemachine.reset
     @statemachine
   end
 
   # This function parses scxml directly from the string parameter "stringbuffer"
   def build_from_scxml_string(stringbuffer)
     Document.parse_stream(stringbuffer, self)
-    @statemachine.reset
+    #@statemachine.reset
     @statemachine
   end
 
@@ -130,13 +129,21 @@ class StatemachineParser < Statemachine::StatemachineBuilder
           # It is a substate
           if @current_state.initial != nil
             # and it is a superstate
-            state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @state.last.subject, @statemachine)
+            if @is_parallel
+              state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @parallel.subject, @statemachine)
+            else
+              state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @state.last.subject, @statemachine)
+            end
             state.startstate(@current_state.initial.to_sym)
           else
             # and it is a state
             if @state.last.is_a? Statemachine::StateBuilder
               # Its parent is not a superstate yet
-              state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @state.last.subject.superstate, @state.last.subject.statemachine)
+              if @is_parallel
+                state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @parallel.subject, @state.last.subject.statemachine)
+              else
+                state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @state.last.subject.superstate, @state.last.subject.statemachine)
+              end
               @state.pop            # pops the old one
               @state.push(state)    # pushes the new one
               if @is_parallel
@@ -246,15 +253,16 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         # In case of parallel statemachines the outmost states will become parallel statemachines
         # only considering parallel on a root level
         if @parallel_state.size == 1 and @parallel.is_a? Statemachine::ParallelStateBuilder
-          statemachine_aux = Statemachine::Statemachine.new(@parallel_state.last.subject)
+          statemachine_aux = Statemachine::Statemachine.new(@parallel.subject)
+          statemachine_aux.add_state(@parallel_state.last.subject)
+          @statemachine.remove_state(@parallel_state.last.subject)
           @substate.each do |j|
             statemachine_aux.add_state(j.subject)
             @statemachine.remove_state(j.subject)
           end
-          statemachine_aux.reset
+          #statemachine_aux.reset
           @parallel.subject.add_statemachine(statemachine_aux)
         end
-
 
         @substate.push(@state.last)
 
@@ -282,23 +290,43 @@ class StatemachineParser < Statemachine::StatemachineBuilder
             @history_target.push(@transitions.last.target)
             @history = false
           else
-            @state.last.event(nil, @transitions.last.target.to_sym, @actions, @transitions.last.cond)
+            if @is_parallel and @parallel_state.empty?
+              @parallel.event(nil, @transitions.last.target.to_sym, @actions, @transitions.last.cond)
+            else
+              @state.last.event(nil, @transitions.last.target.to_sym, @actions, @transitions.last.cond)
+            end
           end
         else
           if @transitions.last.target != nil
-            @state.last.event(@transitions.last.event.to_sym, @transitions.last.target.to_sym, @actions, @transitions.last.cond)
+            if @is_parallel and @parallel_state.empty?
+              @parallel.event(@transitions.last.event.to_sym, @transitions.last.target.to_sym, @actions, @transitions.last.cond)
+            else
+              @state.last.event(@transitions.last.event.to_sym, @transitions.last.target.to_sym, @actions, @transitions.last.cond)
+            end
           else
             # if it doesn't have a target state, it is its own target state
-            @state.last.event(@transitions.last.event.to_sym, @state.last.subject.id.to_sym, @actions, @transitions.last.cond)
+            if @is_parallel and @parallel_state.empty?
+              @parallel.event(@transitions.last.event.to_sym, @state.last.subject.id.to_sym, @actions, @transitions.last.cond)
+            else
+              @state.last.event(@transitions.last.event.to_sym, @state.last.subject.id.to_sym, @actions, @transitions.last.cond)
+            end
           end
         end
         @actions=[]
         @transitions.pop
       when 'onentry'
-        @state.last.on_entry(@actions)
+        if @is_parallel and @parallel_state.empty?
+          @parallel.on_entry(@actions)
+        else
+          @state.last.on_entry(@actions)
+        end
         @actions=[]
       when 'onexit'
-        @state.last.on_exit(@actions)
+        if @is_parallel and @parallel_state.empty?
+          @parallel.on_exit(@actions)
+        else
+          @state.last.on_exit(@actions)
+        end
         @actions=[]
       when 'history'
         @history = false

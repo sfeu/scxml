@@ -29,6 +29,7 @@ describe 'The StatemachineParser for' do
 EOS
 
         @sm = parser.build_from_scxml_string scxml
+        @sm.reset
       end
 
       it "should start with the correct initial state without initial attribute set" do
@@ -79,6 +80,7 @@ EOS
 </scxml>
 EOS
         @sm = parser.build_from_scxml_string scxml
+        @sm.reset
       end
 
       it "should start with the correct state" do
@@ -119,10 +121,12 @@ EOS
 EOS
         parser = StatemachineParser.new
         @sm = parser.build_from_scxml_string scxml
+        @sm.reset
         @sm.state.should==:state1
 
       end
     end
+
     describe "in double nested superstates" do
       before (:each) do
 
@@ -151,6 +155,7 @@ EOS
 EOS
 
         @sm = parser.build_from_scxml_string scxml
+        @sm.reset
       end
 
       it "should support starting with the correct inital state that has been excplicitely set" do
@@ -187,70 +192,6 @@ EOS
       end
     end
 
-    describe 'with onentry or onexit' do
-
-      before (:each) do
-        @messenger = mock("messenger" )
-
-        @message_queue = mock("message_queue" )
-
-        parser = StatemachineParser.new(nil, @messenger, @message_queue)
-
-        scxml = <<EOS
-<scxml name="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
-  <state id="state1">
-        <transition event="to_state2" target="state2"/>
-  </state>
-  <state id="state2">
-     <onentry>
-          <log expr="'inside state2 onentry'"/>
-          <send type="'x-mint'" target="target" event="fax.SEND"/>
-     </onentry>
-     <onexit>
-          <log expr="'inside state2 onexit'"/>
-     </onexit>
-      <transition event="to_state1" target="state1">
-           <send type="'x-mint'" target="target-2" event="fax.SEND-2"/>
-        </transition>
-  </state>
-
-</scxml>
-EOS
-
-        @sm = parser.build_from_scxml_string scxml
-      end
-
-      it "should consider onentry" do
-        @messenger.should_receive(:puts).with("'inside state2 onentry'" )
-        @message_queue.should_receive(:send).with("target","fax.SEND")
-        @sm.to_state2
-      end
-
-      it "should consider onexit" do
-        @messenger.should_receive(:puts).with("'inside state2 onentry'" )
-        @message_queue.should_receive(:send).with("target","fax.SEND")
-        @sm.to_state2
-        @messenger.should_receive(:puts).with("'inside state2 onexit'" )
-        @message_queue.should_receive(:send).with("target-2","fax.SEND-2")
-        @sm.to_state1
-      end
-
-      it "should receive send inside onentry" do
-        @messenger.should_receive(:puts).with("'inside state2 onentry'" )
-        @message_queue.should_receive(:send).with("target","fax.SEND")
-        @sm.to_state2
-      end
-
-      it "should receive send inside a transition" do
-        @messenger.should_receive(:puts).with("'inside state2 onentry'" )
-        @message_queue.should_receive(:send).with("target","fax.SEND")
-        @sm.to_state2
-        @messenger.should_receive(:puts).with("'inside state2 onexit'" )
-        @message_queue.should_receive(:send).with("target-2","fax.SEND-2")
-        @sm.to_state1
-      end
-    end
-
     describe 'with spontaneous transitions' do
       before (:each) do
         @log = ""
@@ -279,6 +220,7 @@ EOS
 EOS
 
         @sm = parser.build_from_scxml_string scxml
+        @sm.reset
         @sm.context = self
       end
 
@@ -289,7 +231,6 @@ EOS
         @sm.state.should == :done
       end
     end
-
   end
 
   describe 'parallel' do
@@ -328,6 +269,7 @@ EOS
 EOS
 
         @sm = parser.build_from_scxml_string scxml
+        @sm.reset
       end
 
       it "start with the initial state and transition to the parallel states" do
@@ -403,6 +345,7 @@ EOS
 EOS
 
       @sm = parser.build_from_scxml_string scxml
+      @sm.reset
     end
 
 
@@ -446,6 +389,7 @@ EOS
 EOS
 
       @sm = parser.build_from_scxml_string scxml
+      @sm.reset
     end
 
 
@@ -483,6 +427,7 @@ EOS
 EOS
 
       @sm = parser.build_from_scxml_string scxml
+      @sm.reset
  end
 
     it "should use history of sub superstates when transitioning itto it's own history" do
@@ -493,5 +438,196 @@ EOS
       @sm.state.should eql(:daughter)
     end
   end
+
+  describe "On_entry and on_exit actions in" do
+    begin
+      describe 'states' do
+
+        before (:each) do
+          @messenger = mock("messenger" )
+
+          @message_queue = mock("message_queue" )
+
+          parser = StatemachineParser.new(nil, @messenger, @message_queue)
+
+          scxml = <<EOS
+<scxml name="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
+  <state id="state1">
+        <transition event="to_state2" target="state2"/>
+  </state>
+  <state id="state2">
+     <onentry>
+          <log expr="'inside state2 onentry'"/>
+          <send type="'x-mint'" target="target" event="fax.SEND"/>
+     </onentry>
+     <onexit>
+          <log expr="'inside state2 onexit'"/>
+     </onexit>
+      <transition event="to_state1" target="state1">
+           <send type="'x-mint'" target="target-2" event="fax.SEND-2"/>
+        </transition>
+  </state>
+
+</scxml>
+EOS
+
+          @sm = parser.build_from_scxml_string scxml
+          @sm.reset
+        end
+
+        it "should consider onentry" do
+          @messenger.should_receive(:puts).with("'inside state2 onentry'" )
+          @message_queue.should_receive(:send).with("target","fax.SEND")
+          @sm.to_state2
+        end
+
+        it "should consider onexit" do
+          @messenger.should_receive(:puts).with("'inside state2 onentry'" )
+          @message_queue.should_receive(:send).with("target","fax.SEND")
+          @sm.to_state2
+          @messenger.should_receive(:puts).with("'inside state2 onexit'" )
+          @message_queue.should_receive(:send).with("target-2","fax.SEND-2")
+          @sm.to_state1
+        end
+
+        it "should receive send inside onentry" do
+          @messenger.should_receive(:puts).with("'inside state2 onentry'" )
+          @message_queue.should_receive(:send).with("target","fax.SEND")
+          @sm.to_state2
+        end
+
+        it "should receive send inside a transition" do
+          @messenger.should_receive(:puts).with("'inside state2 onentry'" )
+          @message_queue.should_receive(:send).with("target","fax.SEND")
+          @sm.to_state2
+          @messenger.should_receive(:puts).with("'inside state2 onexit'" )
+          @message_queue.should_receive(:send).with("target-2","fax.SEND-2")
+          @sm.to_state1
+        end
+      end
+
+      describe 'superstates inside a parallel state' do
+        before (:each) do
+          def hello_world
+            @log = "Hello world!"
+          end
+
+          def goodbye
+            @log = "Goodbye cruel world!"
+          end
+          parser = StatemachineParser.new(nil,nil)
+
+          scxml = <<EOS
+<scxml initial="disconnected" name="Mouse" version="0.9" xmlns="http://www.w3.org/2005/07/scxml"><!--   node-size-and-position x=0.0 y=0.0 w=662.0 h=660.0  -->
+ <state id="disconnected"><!--   node-size-and-position x=280.0 y=60.0 w=100.0 h=50.0  -->
+  <transition event="connect" target="connected"></transition>
+ </state>
+ <parallel id="connected"><!--   node-size-and-position x=70.0 y=190.0 w=500.0 h=470.0  -->
+  <transition event="disconnect" target="disconnected"><!--   edge-path [disconnected]  x=400.0 y=160.0  --></transition>
+  <state id="leftbutton" initial="released"><!--   node-size-and-position x=40.0 y=50.0 w=210.0 h=210.0  -->
+   <onentry>
+    <script>hello_world</script>
+   </onentry>
+   <onexit>
+    <script>goodbye </script>
+   </onexit>
+   <state id="released"><!--   node-size-and-position x=20.0 y=50.0 w=140.0 h=40.0  -->
+    <transition event="press" target="pressed"><!--   edge-path [pressed]  x=60.0 y=110.0 pointx=0.0 pointy=-40.0 offsetx=0.0 offsety=-5.0  --></transition>
+   </state>
+   <state id="pressed"><!--   node-size-and-position x=30.0 y=140.0 w=120.0 h=40.0  -->
+    <transition event="release" target="released"><!--   edge-path [released]  x=140.0 y=120.0  --></transition>
+   </state>
+  </state>
+  <state id="pointer" initial="stopped"><!--   node-size-and-position x=270.0 y=50.0 w=210.0 h=210.0  -->
+   <state id="stopped"><!--   node-size-and-position x=50.0 y=60.0 w=100.0 h=40.0  -->
+    <transition event="move" target="moving"><!--   edge-path [moving]  x=140.0 y=120.0  --></transition>
+   </state>
+   <state id="moving"><!--   node-size-and-position x=30.0 y=150.0 w=100.0 h=40.0  -->
+    <transition event="stop" target="stopped"><!--   edge-path [stopped]  x=50.0 y=130.0 pointx=0.0 pointy=2.0 offsetx=-15.0 offsety=-2.0  --></transition>
+   </state>
+  </state>
+ </parallel>
+</scxml>
+EOS
+
+          @sm = parser.build_from_scxml_string scxml
+          @sm.reset
+          @sm.context = self
+        end
+
+        it "should support on entry for superstate inside a parallel state" do
+          @sm.connect
+          @log.should=="Hello world!"
+        end
+
+        it "should support on exit for superstate inside a parallel state" do
+          @sm.connect
+          @sm.disconnect
+          @log.should=="Goodbye cruel world!"
+        end
+
+      end
+
+      describe 'parallel states' do
+        before (:each) do
+          def hello_world
+            @log = "Hello world!"
+          end
+          def goodbye
+            @log = "Goodbye cruel world!"
+          end
+          parser = StatemachineParser.new(nil,nil)
+
+          scxml = <<EOS
+<scxml initial="disconnected" name="Mouse" version="0.9" xmlns="http://www.w3.org/2005/07/scxml"><!--   node-size-and-position x=0.0 y=0.0 w=662.0 h=660.0  -->
+ <state id="disconnected"><!--   node-size-and-position x=280.0 y=60.0 w=100.0 h=50.0  -->
+  <transition event="connect" target="connected"></transition>
+ </state>
+ <parallel id="connected"><!--   node-size-and-position x=70.0 y=190.0 w=500.0 h=470.0  -->
+  <onentry>
+   <script>hello_world</script>
+  </onentry>
+   <onexit>
+    <script>goodbye </script>
+   </onexit>
+  <transition event="disconnect" target="disconnected"><!--   edge-path [disconnected]  x=400.0 y=160.0  --></transition>
+  <state id="leftbutton" initial="released"><!--   node-size-and-position x=40.0 y=50.0 w=210.0 h=210.0  -->
+   <state id="released"><!--   node-size-and-position x=20.0 y=50.0 w=140.0 h=40.0  -->
+    <transition event="press" target="pressed"><!--   edge-path [pressed]  x=60.0 y=110.0 pointx=0.0 pointy=-40.0 offsetx=0.0 offsety=-5.0  --></transition>
+   </state>
+   <state id="pressed"><!--   node-size-and-position x=30.0 y=140.0 w=120.0 h=40.0  -->
+    <transition event="release" target="released"><!--   edge-path [released]  x=140.0 y=120.0  --></transition>
+   </state>
+  </state>
+  <state id="pointer" initial="stopped"><!--   node-size-and-position x=270.0 y=50.0 w=210.0 h=210.0  -->
+   <state id="stopped"><!--   node-size-and-position x=50.0 y=60.0 w=100.0 h=40.0  -->
+    <transition event="move" target="moving"><!--   edge-path [moving]  x=140.0 y=120.0  --></transition>
+   </state>
+   <state id="moving"><!--   node-size-and-position x=30.0 y=150.0 w=100.0 h=40.0  -->
+    <transition event="stop" target="stopped"><!--   edge-path [stopped]  x=50.0 y=130.0 pointx=0.0 pointy=2.0 offsetx=-15.0 offsety=-2.0  --></transition>
+   </state>
+  </state>
+ </parallel>
+</scxml>
+EOS
+
+          @sm = parser.build_from_scxml_string scxml
+          @sm.reset
+          @sm.context = self
+        end
+
+        it "should support on entry for parallel states" do
+          @sm.connect
+          @log.should=="Hello world!"
+        end
+
+        it "should support on exit for parallel states" do
+          @sm.connect
+          @sm.disconnect
+          @log.should=="Goodbye cruel world!"
+        end
+      end
+    end
+end
   end
 end

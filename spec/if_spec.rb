@@ -28,6 +28,7 @@ describe 'The StatemachineParser for' do
 EOS
 
           @sm = parser.build_from_scxml_string scxml
+          @sm.reset
         end
 
         it "should support logging inside a transition" do
@@ -63,6 +64,7 @@ EOS
 EOS
 
           @sm = parser.build_from_scxml_string scxml
+          @sm.reset
         end
 
         it "should support logging inside a transition" do
@@ -102,6 +104,7 @@ EOS
 EOS
 
           @sm = parser.build_from_scxml_string scxml
+          @sm.reset
         end
 
         it "should support logging inside a transition" do
@@ -145,6 +148,7 @@ EOS
 EOS
 
           @sm = parser.build_from_scxml_string scxml
+          @sm.reset
         end
 
         it "should support logging inside a transition" do
@@ -191,6 +195,7 @@ EOS
 EOS
 
           @sm = parser.build_from_scxml_string scxml
+          @sm.reset
         end
 
         it "should support logging inside a transition" do

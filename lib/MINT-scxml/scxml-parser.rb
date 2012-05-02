@@ -103,7 +103,6 @@ class StatemachineParser < Statemachine::StatemachineBuilder
           @state.push(state)
         end
       when 'parallel'
-        @parallel = Statemachine::ParallelStateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
         @is_parallel = true
         # If there is a state that encapsulates the parallel state, change it to a superstate
         if not @state.empty? and @state.last.is_a? Statemachine::StateBuilder
@@ -111,6 +110,12 @@ class StatemachineParser < Statemachine::StatemachineBuilder
           @state.pop            # pops the old one
           @state.push(state)    # pushes the new one
         end
+        if @state.empty?
+          @parallel = Statemachine::ParallelStateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
+        else
+          @parallel = Statemachine::ParallelStateBuilder.new(attributes['id'].to_sym, @state.last.subject, @statemachine)
+        end
+
       when 'state'
         @current_state = State.new
         @current_state.id = attributes['id']

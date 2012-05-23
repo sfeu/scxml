@@ -131,10 +131,24 @@ class StatemachineParser < Statemachine::StatemachineBuilder
             state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @subject, @statemachine)
           end
         else
-          # It is a substate
+          #It is a substate
+          if @state.last.is_a? Statemachine::StateBuilder
+            # Its parent is not a superstate yet
+            if @is_parallel and @parallel_state.empty?
+              state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @parallel.subject, @state.last.subject.statemachine)
+            else
+              state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @state.last.subject.superstate, @state.last.subject.statemachine)
+            end
+            @state.pop            # pops the old one
+            @state.push(state)    # pushes the new one
+            if @is_parallel
+              @parallel_state.pop
+              @parallel_state.push(state)
+            end
+          end
           if @current_state.initial != nil
             # and it is a superstate
-            if @is_parallel
+            if @is_parallel and @parallel_state.empty?
               state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @parallel.subject, @statemachine)
             else
               state = Statemachine::SuperstateBuilder.new(attributes['id'].to_sym, @state.last.subject, @statemachine)
@@ -142,21 +156,11 @@ class StatemachineParser < Statemachine::StatemachineBuilder
             state.startstate(@current_state.initial.to_sym)
           else
             # and it is a state
-            if @state.last.is_a? Statemachine::StateBuilder
-              # Its parent is not a superstate yet
-              if @is_parallel
-                state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @parallel.subject, @state.last.subject.statemachine)
-              else
-                state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @state.last.subject.superstate, @state.last.subject.statemachine)
-              end
-              @state.pop            # pops the old one
-              @state.push(state)    # pushes the new one
-              if @is_parallel
-                @parallel_state.pop
-                @parallel_state.push(state)
-              end
+            if @is_parallel and @parallel_state.empty?
+              state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @parallel.subject, @statemachine)
+            else
+              state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @state.last.subject, @statemachine)
             end
-            state = Statemachine::StateBuilder.new(attributes['id'].to_sym, @state.last.subject, @statemachine)
           end
         end
         @state.push(state)

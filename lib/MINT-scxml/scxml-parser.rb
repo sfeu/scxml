@@ -252,7 +252,7 @@ class StatemachineParser < Statemachine::StatemachineBuilder
           @substate.each do |j|
             if s
               s1 = statemachine.get_state(j.subject.id)
-              s.transitions.each do |v,k|
+              s.transitions.each do |k|
                 s1.add(k) if s1
               end
             end
@@ -282,7 +282,7 @@ class StatemachineParser < Statemachine::StatemachineBuilder
             # change every transitions where @history_states.last was the target state to history_states.last+"_H"
             # for every history state
             @statemachine.states.each_value do |s|
-              s.transitions.each_value do |t|
+              s.transitions.each do |t|
                 if t.destination_id == @history_states.last
                   t.destination_id = (t.destination_id.to_s + "_H").to_s
                 end

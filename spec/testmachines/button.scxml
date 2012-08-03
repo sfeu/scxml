@@ -1,0 +1,52 @@
+<scxml initial="initialized" name="Button" version="0.9" xmlns="http://www.w3.org/2005/07/scxml"><!--   node-size-and-position x=0.0 y=0.0 w=730.0 h=440.0  -->
+ <state id="initialized"><!--   node-size-and-position x=70.0 y=60.0 w=100.0 h=30.0  -->
+  <transition event="position" target="positioning"></transition>
+ </state>
+ <state id="positioning"><!--   node-size-and-position x=60.0 y=130.0 w=100.0 h=30.0  -->
+  <transition event="calculated" target="positioned"></transition>
+ </state>
+ <state id="positioned"><!--   node-size-and-position x=50.0 y=220.0 w=100.0 h=30.0  -->
+  <transition event="display" target="p"></transition>
+ </state>
+ <state id="hidden"><!--   node-size-and-position x=270.0 y=60.0 w=130.0 h=40.0  -->
+  <transition event="position" target="positioning"></transition>
+ </state>
+ <state id="disabled"><!--   node-size-and-position x=490.0 y=60.0 w=130.0 h=40.0  -->
+  <transition event="hide" target="hidden"></transition>
+ </state>
+ <parallel id="p"><!--   node-size-and-position x=170.0 y=150.0 w=510.0 h=270.0  -->
+  <transition event="disable" target="disabled"></transition>
+  <transition event="hide" target="hidden"></transition>
+  <state id="displaying" initial="init_js"><!--   node-size-and-position x=20.0 y=30.0 w=280.0 h=240.0  -->
+   <state id="displayed"><!--   node-size-and-position x=100.0 y=110.0 w=100.0 h=30.0  -->
+    <transition event="highlight" target="highlighted"><!--   edge-path [highlighted]  x=90.0 y=170.0 pointx=0.0 pointy=18.0 offsetx=19.0 offsety=-14.0  --></transition>
+   </state>
+   <state id="highlighted"><!--   node-size-and-position x=100.0 y=200.0 w=100.0 h=30.0  -->
+    <transition event="unhighlight" target="displayed"><!--   edge-path [displayed]  x=190.0 y=170.0  --></transition>
+    <transition event="up" target="displayed">
+     <invoke src="highlight_up" type="x-mint"></invoke>
+<!--   edge-path [displayed]  x=230.0 y=210.0 x=230.0 y=130.0 pointx=0.0 pointy=-10.0 offsetx=0.0 offsety=5.0  --></transition>
+    <transition event="down" target="displayed">
+     <invoke src="highlight_down" type="x-mint"></invoke>
+<!--   edge-path [displayed]  x=60.0 y=210.0 x=60.0 y=130.0  --></transition>
+    <transition event="left" target="displayed">
+     <invoke src="highlight_left" type="x-mint"></invoke>
+<!--   edge-path [displayed]  x=30.0 y=220.0 x=30.0 y=120.0  --></transition>
+    <transition event="right" target="displayed">
+     <invoke src="highlight_right" type="x-mint"></invoke>
+<!--   edge-path [displayed]  x=270.0 y=220.0 x=270.0 y=120.0  --></transition>
+   </state>
+   <state id="init_js"><!--   node-size-and-position x=90.0 y=50.0 w=100.0 h=30.0  -->
+    <transition target="displayed"></transition>
+   </state>
+  </state>
+  <state id="b" initial="released"><!--   node-size-and-position x=330.0 y=23.0 w=170.0 h=210.0  -->
+   <state id="pressed"><!--   node-size-and-position x=30.0 y=140.0 w=100.0 h=30.0  -->
+    <transition event="release" target="released"><!--   edge-path [released]  x=120.0 y=100.0 pointx=0.0 pointy=-40.0 offsetx=0.0 offsety=5.0  --></transition>
+   </state>
+   <state id="released"><!--   node-size-and-position x=30.0 y=40.0 w=100.0 h=30.0  -->
+    <transition event="press" target="pressed"><!--   edge-path [pressed]  x=40.0 y=100.0  --></transition>
+   </state>
+  </state>
+ </parallel>
+</scxml>

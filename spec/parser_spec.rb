@@ -230,6 +230,17 @@ EOS
         @sm.toggle
         @sm.state.should == :done
       end
+
+      it "should execute inside parallel states as well" do
+        parser = StatemachineParser.new(nil,nil)
+        @sm = parser.build_from_scxml(File.dirname(__FILE__) + "/testmachines/button.scxml")
+        @sm.reset
+        @sm.position
+        @sm.calculated
+        @sm.process_event :display
+        @sm.states_id.should == [:displayed,:released]
+      end
+
     end
   end
 

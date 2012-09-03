@@ -266,6 +266,7 @@ class StatemachineParser < Statemachine::StatemachineBuilder
           statemachine_aux.add_state(@parallel_state.last.subject)
           @statemachine.remove_state(@parallel_state.last.subject)
           @substate.each do |j|
+            j.subject.modify_statemachine(statemachine_aux)
             statemachine_aux.add_state(j.subject)
             @statemachine.remove_state(j.subject)
           end

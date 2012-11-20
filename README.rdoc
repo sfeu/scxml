@@ -33,7 +33,7 @@ and generate the RDoc.
 
 == LICENSE:
 
-Copyright (C) 2010,2011 Sebastian Feuerstack, Jessica H. Colnago
+Copyright (C) 2010-2012 Sebastian Feuerstack, Jessica H. Colnago
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public

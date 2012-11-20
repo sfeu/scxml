@@ -1,3 +1,17 @@
+=== 1.1.0 / 2012-11-20
+
+* (Sebastian) fixed bug: root statemachine was wrongly set for states that are nested inside parallel
+* (Sebastian) added test for spontaneous transitions inside parallel states
+* (Sebastian) removed old MINT test state machines
+* (Jessica) transitions now stored as an array
+* (Jessica) fixed parallel superstate bug
+* (Jessica) All tests working. Added on_entry, on_exit and transitions for parallel states
+* (Jessica) added spontaneous transition
+* (Jessica) WIP: script
+* (Jessica) added  treatment for ifs
+* (Jessica) fixed history states support and history state tests
+* (Jessica) Removed unnecessary transitions.
+
 === 1.0.0 / 2011-11-01
 
 * First version

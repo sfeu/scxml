@@ -644,6 +644,106 @@ EOS
             @sm.disconnect
             @log.should=="Goodbye cruel world!"
           end
+
+          it "sould enter using spontaneous transitions " do
+
+            class ActivationCallback
+              attr_reader :called
+              attr_reader :new_states
+              attr_reader :abstract_states
+              attr_reader :atomic_states
+
+              def initialize
+                @called = []
+                @new_states = []
+                @abstract_states = []
+                @atomic_states =[]
+
+              end
+              def activate(new_states,abstract_states, atomic_states)
+                @called << true
+                @new_states<<  new_states
+                @abstract_states << abstract_states
+                @atomic_states <<  atomic_states
+                puts "activate #{@new_states.last} #{@abstract_states.last} #{@atomic_states.last}"
+              end
+            end
+
+            @callback = ActivationCallback.new
+
+
+            def isInstant?
+              true
+            end
+
+            def isContinuous?
+              false
+            end
+
+            def isOnChange?
+              false
+            end
+
+            def evaluate
+              true
+            end
+            parser = StatemachineParser.new(nil,nil)
+
+            scxml = <<EOS
+<scxml initial="inactive" name="StateObservation" version="0.9" xmlns="http://www.w3.org/2005/07/scxml"><!--   node-size-and-position x=0.0 y=0.0 w=868.0 h=725.0  -->
+  <state id="inactive"><!--   node-size-and-position x=180.0 y=40.0 w=80.0 h=50.0  -->
+    <transition event="start" target="active"><!--   edge-path [active]  x=170.0 y=120.0 pointx=0.0 pointy=-29.0 offsetx=-12.0 offsety=14.0  --></transition>
+  </state>
+  <state id="active" initial="init"><!--   node-size-and-position x=160.0 y=140.0 w=610.0 h=450.0  -->
+    <transition event="stop" target="inactive"></transition>
+    <state id="init"><!--   node-size-and-position x=20.0 y=30.0 w=60.0 h=40.0  -->
+      <transition cond="isInstant? or isContinuous?" target="instant_evaluation">
+        <script>evaluate</script>
+      </transition>
+      <transition cond="isOnChange?" target="subscribing"></transition>
+    </state>
+    <state id="instant_evaluation"><!--   node-size-and-position x=180.0 y=30.0 w=130.0 h=40.0  -->
+      <transition cond="(not @result.nil?) and @result.length&gt;0" target="true">
+        <invoke src="@varmap.merge! @result" type="x-mint"></invoke>
+      </transition>
+      <transition cond="@result.nil?" target="false"></transition>
+    </state>
+    <parallel id="running"><!--   node-size-and-position x=40.0 y=130.0 w=480.0 h=300.0  -->
+      <state id="result" initial="false"><!--   node-size-and-position x=200.0 y=60.0 w=270.0 h=90.0  -->
+        <state id="true"><!--   node-size-and-position x=170.0 y=40.0 w=50.0 h=30.0  -->
+          <transition event="false" target="false"></transition>
+        </state>
+        <state id="false"><!--   node-size-and-position x=10.0 y=40.0 w=80.0 h=30.0  -->
+          <transition event="true" target="true"><!--   edge-path [true]  x=130.0 y=40.0 pointx=0.0 pointy=14.0 offsetx=17.0 offsety=4.0  --></transition>
+        </state>
+      </state>
+      <state id="subscription" initial="check"><!--   node-size-and-position x=30.0 y=40.0 w=150.0 h=250.0  -->
+        <state id="subscribing"><!--   node-size-and-position x=40.0 y=110.0 w=80.0 h=40.0  -->
+          <onentry>@subscribed=true</onentry>
+          <transition event="subscribed" target="subscribed"></transition>
+        </state>
+        <state id="subscribed"><!--   node-size-and-position x=40.0 y=190.0 w=80.0 h=40.0  --></state>
+        <state id="check"><!--   node-size-and-position x=40.0 y=30.0 w=80.0 h=40.0  -->
+          <transition cond="isOnChange? or isContinuous?" target="subscribing"></transition>
+        </state>
+      </state>
+    </parallel>
+  </state>
+</scxml>
+EOS
+
+            @sm = parser.build_from_scxml_string scxml
+            @sm.reset
+            @sm.activation=@callback.method(:activate)
+            @sm.context = self
+            @sm.start
+
+            @callback.called.length.should == 3
+
+            @callback.new_states[0].should == [:active,:init]
+            @callback.new_states[1].should == [:instant_evaluation]
+            @callback.new_states[2].should == [:running, :result, :subscription, :false, :check]
+          end
         end
       end
     end

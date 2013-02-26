@@ -645,51 +645,57 @@ EOS
             @log.should=="Goodbye cruel world!"
           end
 
-          it "sould enter using spontaneous transitions " do
 
-            class ActivationCallback
-              attr_reader :called
-              attr_reader :new_states
-              attr_reader :abstract_states
-              attr_reader :atomic_states
+        end
+      end
+    end
 
-              def initialize
-                @called = []
-                @new_states = []
-                @abstract_states = []
-                @atomic_states =[]
+    describe "with spontaneous transitions to parallel states" do
+      it "should enter using spontaneous transitions " do
 
-              end
-              def activate(new_states,abstract_states, atomic_states)
-                @called << true
-                @new_states<<  new_states
-                @abstract_states << abstract_states
-                @atomic_states <<  atomic_states
-                puts "activate #{@new_states.last} #{@abstract_states.last} #{@atomic_states.last}"
-              end
-            end
+        class ActivationCallback
+          attr_reader :called
+          attr_reader :new_states
+          attr_reader :abstract_states
+          attr_reader :atomic_states
 
-            @callback = ActivationCallback.new
+          def initialize
+            @called = []
+            @new_states = []
+            @abstract_states = []
+            @atomic_states =[]
+
+          end
+          def activate(new_states,abstract_states, atomic_states)
+            @called << true
+            @new_states<<  new_states
+            @abstract_states << abstract_states
+            @atomic_states <<  atomic_states
+            puts "activate #{@new_states.last} #{@abstract_states.last} #{@atomic_states.last}"
+          end
+        end
+
+        @callback = ActivationCallback.new
 
 
-            def isInstant?
-              true
-            end
+        def isInstant?
+          true
+        end
 
-            def isContinuous?
-              false
-            end
+        def isContinuous?
+          false
+        end
 
-            def isOnChange?
-              false
-            end
+        def isOnChange?
+          false
+        end
 
-            def evaluate
-              true
-            end
-            parser = StatemachineParser.new(nil,nil)
+        def evaluate
+          true
+        end
+        parser = StatemachineParser.new(nil,nil)
 
-            scxml = <<EOS
+        scxml = <<EOS
 <scxml initial="inactive" name="StateObservation" version="0.9" xmlns="http://www.w3.org/2005/07/scxml"><!--   node-size-and-position x=0.0 y=0.0 w=868.0 h=725.0  -->
   <state id="inactive"><!--   node-size-and-position x=180.0 y=40.0 w=80.0 h=50.0  -->
     <transition event="start" target="active"><!--   edge-path [active]  x=170.0 y=120.0 pointx=0.0 pointy=-29.0 offsetx=-12.0 offsety=14.0  --></transition>
@@ -732,19 +738,17 @@ EOS
 </scxml>
 EOS
 
-            @sm = parser.build_from_scxml_string scxml
-            @sm.reset
-            @sm.activation=@callback.method(:activate)
-            @sm.context = self
-            @sm.start
+        @sm = parser.build_from_scxml_string scxml
+        @sm.reset
+        @sm.activation=@callback.method(:activate)
+        @sm.context = self
+        @sm.start
 
-            @callback.called.length.should == 3
+        @callback.called.length.should == 3
 
-            @callback.new_states[0].should == [:active,:init]
-            @callback.new_states[1].should == [:instant_evaluation]
-            @callback.new_states[2].should == [:running, :result, :subscription, :false, :check]
-          end
-        end
+        @callback.new_states[0].should == [:active,:init]
+        @callback.new_states[1].should == [:instant_evaluation]
+        @callback.new_states[2].should == [:running, :result, :subscription, :false, :check]
       end
     end
   end

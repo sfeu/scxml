@@ -19,27 +19,59 @@ class StatemachineParser < Statemachine::StatemachineBuilder
 
   def initialize(context = nil, logger = nil, queue = nil)
     super()
-    @current_transition = nil
-    @current_state = nil
-    @current_element = nil
-    @parallel = nil
-    @history_state = nil
+
     @statemachine.messenger = logger
     @statemachine.message_queue = queue
     @statemachine.context= context
-    @actions = Array.new
+
+    # The current variables are used to temporarily store the value of the _"type"
+    # in order to acquire the necessary data before adding the to its proper stack
+    @current_transition = nil
+    @current_state = nil
+    @current_element = nil
+
+    # Stacks
+    # These stacks (created as Arrays but used as stacks: push & pop) are used
+    # to store and treat the structure of the scxml file read.
+    # Some require auxiliary stacks due to the necessity of different treatments
+    # in different situations (e.g.: substate_aux is necessary due to the fact that
+    # a parallel state's superstate can have substates that would only be treated when
+    # the superstate is closed, which only happens after the parallel state is treated.
+    # Which in turn can have its own set of substates).
+    # Obs: These variables are used as stacks due to two basic situations: the ability of
+    #      nested elements in statemachines and the need to create a single structure to be
+    #      passed to element's constructors.
+    @actions = Array.new            # stores the actions to later be added to the transition they belong.
     @actions_aux = Array.new
-    @state = Array.new
-    @substate = Array.new
-    @transitions = Array.new
+    @state = Array.new              # stores the order of nested states to be treated and used further on.
+    @substate = Array.new           # similar to state, it stores the substates in order to later be added
+                                    # and have the proper transition treatment related to its parent state
+    @substate_aux = Array.new
+    @transitions = Array.new        # stores the transitions in order to be later added to its proper state.
+          # so on and so forth.
+    @parallel_state = Array.new
     @history_states = Array.new
     @history_target = Array.new
-    @parallel_state = Array.new
+
+    # These variables are used to store the value of the element that gives its
+    # name in order to be used as parameters or "situation check" in future parts
+    # of the parser.
+    @parallel = nil
+    @history_state = nil
+
+    # These variables are used to help in the creation of actions that have if clauses.
     @if_actions = Array.new
     @if_actions_aux = Array.new
     @if = Array.new
     @tag = Array.new
     @cond = Array.new
+
+    # These boolean variables are used to determine in which case we are on
+    # so to treat each case properly.
+    #   If a history state was read, if inside a parallel state and if it has
+    #   an outermost scxml_state (the latter implicates on different treatments due
+    #   to the fact that it is added to the states stack and therefore it might not be
+    #   empty as expected in certain situations)
     @history = false
     @is_parallel = false
     @scxml_state = false
@@ -104,6 +136,11 @@ class StatemachineParser < Statemachine::StatemachineBuilder
         end
       when 'parallel'
         @is_parallel = true
+        # If the parent superstate of the parallel state has substates, save them for later
+        if not @substate.empty?
+          @substate_aux = @substate
+          @substate = []
+        end
         # If there is a state that encapsulates the parallel state, change it to a superstate
         if not @state.empty? and @state.last.is_a? Statemachine::StateBuilder
           state = Statemachine::SuperstateBuilder.new(@state.last.subject.id, @state.last.subject.superstate, @state.last.subject.statemachine)
@@ -237,6 +274,8 @@ class StatemachineParser < Statemachine::StatemachineBuilder
       when 'parallel'
         @statemachine.add_state(@parallel.subject)
         @is_parallel = false
+        @substate = @substate_aux
+        @substate_aux = []
       when 'state'
         if @state.last.is_a? Statemachine::SuperstateBuilder
           s = statemachine.get_state(@state.last.subject.id)

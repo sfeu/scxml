@@ -1,3 +1,7 @@
+=== 1.1.1 / 2013-02-26
+
+* Bugfix for spontaneous transitions to parallel states.
+
 === 1.1.0 / 2012-11-20
 
 * (Sebastian) fixed bug: root statemachine was wrongly set for states that are nested inside parallel

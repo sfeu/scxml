@@ -1,7 +1,7 @@
 $:.unshift(File.dirname(__FILE__) + '/../lib')
 require "rubygems"
 require "bundler/setup"
-require "spec"
+require "rspec"
 require 'statemachine'
 require 'MINT-scxml/scxml-parser'
 

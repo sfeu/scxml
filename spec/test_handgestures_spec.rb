@@ -27,7 +27,7 @@ describe 'state' do
   before (:each) do
     context = TestContext.new
     parser = StatemachineParser.new(context)
-    @sm = parser.build_from_scxml "testmachines/handgestures-scxmlgui.scxml"
+    @sm = parser.build_from_scxml File.dirname(__FILE__)+"/testmachines/handgestures-scxmlgui.scxml"
     @sm.reset
   end
 

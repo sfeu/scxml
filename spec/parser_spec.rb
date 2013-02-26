@@ -683,7 +683,7 @@ EOS
         end
 
         def isContinuous?
-          false
+          true
         end
 
         def isOnChange?
@@ -744,11 +744,12 @@ EOS
         @sm.context = self
         @sm.start
 
-        @callback.called.length.should == 3
+        @callback.called.length.should == 4
 
         @callback.new_states[0].should == [:active,:init]
         @callback.new_states[1].should == [:instant_evaluation]
         @callback.new_states[2].should == [:running, :result, :subscription, :false, :check]
+        @callback.new_states[2].should == [:subscribing]
       end
     end
   end

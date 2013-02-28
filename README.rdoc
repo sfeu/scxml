@@ -4,36 +4,63 @@
 
 == DESCRIPTION:
 
-This gem implements a state chart XML (SCXML) parser that generates a ruby statemachine.
+This gem implements all core constucts of the state chart XML (SCXML) specification of the W3C.
+(http://www.w3.org/TR/scxml/)
+
+Instead of implementing an interpreter, this gem implements a parser that create a ruby statemachine instance based
+on the MINT-statemachine gem (https://github.com/sfeu/statemachine).
 
 == FEATURES/PROBLEMS:
 
-* Currently only supports the very basic set of SCXML
+We currently do not support the definition of a data model. Instead the ruby class that contains the statemachine
+instance can be used to store data. Conditions can be defined using ruby inside the SCXML definition and member
+functionc can be called using SCXML script or invoke.
 
-== SYNOPSIS:
+== EXAMPLE:
+
+Parses an SCXML string and creates a statemachine instance in @sm. The messenger object
+can be used to capture the SCXML log messenges (using the log statement).
+
+    @messenger = mock("messenger" )
+
+    parser = StatemachineParser.new(nil,@messenger)
+
+    scxml = <<EOS
+ <scxml name="SCXML" xmlns="http://www.w3.org/2005/07/scxml">
+  <state id="state1">
+     <transition event="event1" target="state2"/>
+     <transition event="event4" target="state2">
+        <log expr="transition executing"/>
+     </transition>
+  </state>
+
+  <state id="state2">
+     <transition event="event2" target="state3"/>
+  </state>
+
+  <state id="state3">
+     <transition event="event3" target="state1"/>
+  </state>
+  </scxml>
+ EOS
+
+          @sm = parser.build_from_scxml_string scxml
+          @sm.reset
 
   See tests
 
 == REQUIREMENTS:
 
-* Depends on MINT-statemachine gem
+* Depends on MINT-statemachine gem (https://github.com/sfeu/statemachine)
 
 == INSTALL:
 
 * sudo gem install MINT-scxml
 
-== DEVELOPERS:
-
-After checking out the source, run:
-
-  $ rake newb
-
-This task will install any missing dependencies, run the tests/specs,
-and generate the RDoc.
 
 == LICENSE:
 
-Copyright (C) 2010-2012 Sebastian Feuerstack, Jessica H. Colnago
+Copyright (C) 2010-2013 Sebastian Feuerstack, Jessica H. Colnago
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public

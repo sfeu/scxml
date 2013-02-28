@@ -1,3 +1,8 @@
+=== 1.1.2 / 2013-02-28
+
+* Another bugfix for spontaneous transitions to parallel states, now depends on MINT-statemachine version 1.3.2
+* improved documentation
+
 === 1.1.1 / 2013-02-26
 
 * Bugfix for spontaneous transitions to parallel states.

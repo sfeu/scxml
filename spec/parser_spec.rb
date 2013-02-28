@@ -749,7 +749,7 @@ EOS
         @callback.new_states[0].should == [:active,:init]
         @callback.new_states[1].should == [:instant_evaluation]
         @callback.new_states[2].should == [:running, :result, :subscription, :false, :check]
-        @callback.new_states[2].should == [:subscribing]
+        @callback.new_states[3].should == [:subscribing]
       end
     end
   end

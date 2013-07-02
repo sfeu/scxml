@@ -1,5 +1,5 @@
 source :rubygems
-gem "MINT-statemachine", "1.4.0"
+gem "MINT-statemachine", "1.4.1"
 gem "rspec","2.8.0"
 gem "rake","0.9.2"
 gem "hoe",'3.6.3'

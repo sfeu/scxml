@@ -1,5 +1,9 @@
 === 1.1.4 / 2013-07-02
 
+* depends on MINT-statemachine version 1.4.1
+
+=== 1.1.4 / 2013-07-02
+
 * bugfix now really depends on MINT-statemachine version 1.4.0
 
 === 1.1.3 / 2013-07-02

@@ -9,6 +9,7 @@ require 'hoe'
 # Hoe.plugin :inline
 # Hoe.plugin :manifest
 Hoe.plugin :newgem
+Hoe.plugin :gemspec
 # Hoe.plugin :racc
 # Hoe.plugin :rubyforge
 # Hoe.plugin :website

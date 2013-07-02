@@ -17,7 +17,7 @@ Hoe.plugin :gemspec
 Hoe.spec 'MINT-scxml' do
   self.developer 'Jessica H. Colnago, Sebastian Feuerstack', 'Sebastian@Feuerstack.org'
   self.rubyforge_name       = self.name # TODO this is default value
-  self.extra_deps         = [['MINT-statemachine','~> 1.3.0']]
+  self.extra_deps         = [['MINT-statemachine','~> 1.4.0']]
   self.email = "Sebastian@Feuerstack.org"
 
 

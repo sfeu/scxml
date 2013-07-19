@@ -1,3 +1,11 @@
+=== 1.1.7 / 2013-07-19
+
+* fixed broken 1.6.0 packaging
+
+=== 1.1.6 / 2013-07-19
+
+* depends on MINT-statemachine version 1.5.0
+
 === 1.1.4 / 2013-07-02
 
 * depends on MINT-statemachine version 1.4.1

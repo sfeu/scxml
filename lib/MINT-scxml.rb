@@ -1,5 +1,5 @@
-class SCXML_MINT
-  VERSION = '1.1.5'
+class MINT_scxml
+  VERSION = '1.1.7'
 end
 
 require "MINT-scxml/scxml-parser"

@@ -1,7 +1,6 @@
 Gemfile
 Gemfile.lock
 History.txt
-MINT-scxml.gemspec
 Manifest.txt
 README.rdoc
 Rakefile

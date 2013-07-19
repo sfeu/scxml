@@ -1,2 +1,4 @@
 /*.autotest
 /.idea/
+/pkg/
+/projectFilesBackup/
